@@ -24,7 +24,7 @@ public class GameServer extends JFrame {
     public GameServer() {
         setTitle("Game Server - Debug");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 400);
+        setSize(800, 600);
         setLocationRelativeTo(null);
         
         setupUI();
@@ -35,19 +35,11 @@ public class GameServer extends JFrame {
         
  
         JPanel topPanel = new JPanel(new FlowLayout());
-        topPanel.setBackground(new Color(240, 240, 240));
         
         startBtn = new JButton("Start Server");
         stopBtn = new JButton("Stop Server");
         playerCountLabel = new JLabel("Players: 0");
         
-        startBtn.setBackground(new Color(76, 175, 80));
-        startBtn.setForeground(Color.WHITE);
-        startBtn.setFocusPainted(false);
-        
-        stopBtn.setBackground(new Color(244, 67, 54));
-        stopBtn.setForeground(Color.WHITE);
-        stopBtn.setFocusPainted(false);
         stopBtn.setEnabled(false);
         
         startBtn.addActionListener(e -> startServer());
@@ -64,9 +56,7 @@ public class GameServer extends JFrame {
     
         logArea = new JTextArea();
         logArea.setEditable(false);
-        logArea.setFont(new Font("Consolas", Font.PLAIN, 11));
-        logArea.setBackground(new Color(30, 30, 30));
-        logArea.setForeground(new Color(200, 200, 200));
+        logArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane logScroll = new JScrollPane(logArea);
         logScroll.setBorder(BorderFactory.createTitledBorder("Server Log"));
         
@@ -76,12 +66,10 @@ public class GameServer extends JFrame {
         playerListModel = new DefaultListModel<>();
         playerList = new JList<>(playerListModel);
         playerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        playerList.setCellRenderer(new PlayerListCellRenderer());
         JScrollPane playerScroll = new JScrollPane(playerList);
         
         kickBtn = new JButton("Kick Player");
-        kickBtn.setBackground(new Color(255, 152, 0));
-        kickBtn.setForeground(Color.WHITE);
-        kickBtn.setFocusPainted(false);
         kickBtn.setEnabled(false);
         kickBtn.addActionListener(e -> kickSelectedPlayer());
         
@@ -94,7 +82,7 @@ public class GameServer extends JFrame {
         
         centerSplit.setLeftComponent(logScroll);
         centerSplit.setRightComponent(playerPanel);
-        centerSplit.setDividerLocation(400);
+        centerSplit.setDividerLocation(500);
         
         add(topPanel, BorderLayout.NORTH);
         add(centerSplit, BorderLayout.CENTER);
@@ -263,8 +251,7 @@ public class GameServer extends JFrame {
         SwingUtilities.invokeLater(() -> {
             playerListModel.clear();
             for (OnlinePlayer player : onlinePlayers.values()) {
-                String displayText = player.playerName + " (" + player.playerId + ") - " + player.characterImage;
-                playerListModel.addElement(displayText);
+                playerListModel.addElement(player.playerName + " (" + player.playerId + ")");
             }
         });
     }
@@ -287,6 +274,48 @@ public class GameServer extends JFrame {
                 }
                 break;
             }
+        }
+    }
+    
+    private class PlayerListCellRenderer extends JLabel implements ListCellRenderer<String> {
+        private ImageIcon male01Icon;
+        private ImageIcon male02Icon;
+        
+        public PlayerListCellRenderer() {
+            setOpaque(true);
+            try {
+                male01Icon = new ImageIcon("assets/players/Male-01.png");
+                male02Icon = new ImageIcon("assets/players/Male-02.png");
+            } catch (Exception e) {
+                System.out.println("Could not load player icons: " + e.getMessage());
+            }
+        }
+        
+        @Override
+        public Component getListCellRendererComponent(JList<? extends String> list, String value, int index, boolean isSelected, boolean cellHasFocus) {
+            setText(value);
+            
+            if (value != null) {
+                String playerId = value.substring(value.indexOf("(") + 1, value.indexOf(")"));
+                OnlinePlayer player = onlinePlayers.get(playerId);
+                if (player != null) {
+                    if (player.characterImage.contains("Male-01")) {
+                        setIcon(male01Icon);
+                    } else if (player.characterImage.contains("Male-02")) {
+                        setIcon(male02Icon);
+                    }
+                }
+            }
+            
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+            }
+            
+            return this;
         }
     }
     
