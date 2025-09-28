@@ -1,19 +1,20 @@
+import core.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import core.*;
+import network.*;
 import ui.WindowManager;
 import util.*;
 
 public class Main extends JPanel {
     private final Image background;
     private final Image uiBox;
-    private final List<GameObject> objects = List.of(
+    private final java.util.List<GameObject> objects = java.util.List.of(
             new GameObject("./assets/maps/obj/Apartment_Shitty-0.png",
                     "Apartment Shitty-0", 878, 58, 171, 213, 0),
             new GameObject("./assets/maps/obj/Bank-0.png", "Bank-0", 1344, 327, 241, 186, 90),
@@ -28,6 +29,8 @@ public class Main extends JPanel {
     private core.Character character;
     private PlayerState playerState;
     private boolean debugMode = false;
+    private NetworkClient networkClient;
+    private Map<String, core.Character> onlineCharacters = new HashMap<>();
     private java.util.List<Point> pathPoints = new java.util.ArrayList<>();
     private Point startPoint = new Point(878, 280);
     
@@ -51,7 +54,17 @@ public class Main extends JPanel {
         System.out.println("Character created");
         playerState.printStatus();
         
+        String playerId = "player" + System.currentTimeMillis();
+        String characterImage = character.getImagePath();
+        networkClient = new NetworkClient(playerId, "Player", new Point(878, 280), characterImage);
+        networkClient.connect();
+        
         setupLocationPaths();
+        
+        javax.swing.Timer networkTimer = new javax.swing.Timer(50, e -> {
+            updateOnlinePlayers();
+        });
+        networkTimer.start();
 
 
         addKeyListener(new java.awt.event.KeyAdapter() {
@@ -166,6 +179,10 @@ public class Main extends JPanel {
             character.draw((Graphics2D) g);
         }
         
+        for (core.Character onlineChar : onlineCharacters.values()) {
+            onlineChar.draw((Graphics2D) g);
+        }
+        
         if (debugMode) {
             g.setColor(Color.GREEN);
             g.fillOval(startPoint.x - 8, startPoint.y - 8, 16, 16);
@@ -202,11 +219,11 @@ public class Main extends JPanel {
     }
     
     private void setupLocationPaths() {
-        locationPaths.put(PlayerState.Location.APARTMENT_SHITTY, List.of(
+        locationPaths.put(PlayerState.Location.APARTMENT_SHITTY, java.util.List.of(
             new Point(878, 280)
         ));
         
-        locationPaths.put(PlayerState.Location.BANK, List.of(
+        locationPaths.put(PlayerState.Location.BANK, java.util.List.of(
             new Point(922, 289),
             new Point(1223, 291),
             new Point(1308, 555),
@@ -243,14 +260,14 @@ public class Main extends JPanel {
     
     private java.util.List<Point> getPathBetweenLocations(PlayerState.Location from, PlayerState.Location to) {
         if (from == PlayerState.Location.APARTMENT_SHITTY && to == PlayerState.Location.BANK) {
-            return List.of(
+            return java.util.List.of(
                 new Point(922, 289),
                 new Point(1223, 291),
                 new Point(1308, 555),
                 new Point(1437, 562)
             );
         } else if (from == PlayerState.Location.BANK && to == PlayerState.Location.APARTMENT_SHITTY) {
-            return List.of(
+            return java.util.List.of(
                 new Point(1308, 555),
                 new Point(1223, 291),
                 new Point(922, 289),
@@ -274,6 +291,7 @@ public class Main extends JPanel {
                 Point targetPoint = currentPath.get(currentPathIndex);
                 character.setPosition(targetPoint);
                 playerState.setCurrentPosition(targetPoint);
+                networkClient.sendPlayerMove(targetPoint);
                 currentPathIndex++;
                 repaint();
             } else {
@@ -330,11 +348,37 @@ public class Main extends JPanel {
             new java.awt.datatransfer.StringSelection(code), null);
         System.out.println("Code copied to clipboard!");
     }
+    
+    private void updateOnlinePlayers() {
+        Map<String, OnlinePlayer> players = networkClient.getOnlinePlayers();
+        
+        Set<String> currentPlayerIds = new HashSet<>(players.keySet());
+        Set<String> characterIds = new HashSet<>(onlineCharacters.keySet());
+        
+        for (String playerId : currentPlayerIds) {
+            OnlinePlayer player = players.get(playerId);
+            if (!onlineCharacters.containsKey(playerId)) {
+                onlineCharacters.put(playerId, new core.Character(player.position, player.characterImage));
+                System.out.println("Created online character for: " + playerId + " with " + player.characterImage);
+            } else {
+                onlineCharacters.get(playerId).setPosition(player.position);
+            }
+        }
+        
+        for (String characterId : characterIds) {
+            if (!currentPlayerIds.contains(characterId)) {
+                onlineCharacters.remove(characterId);
+                System.out.println("Removed online character for: " + characterId);
+            }
+        }
+        
+        repaint();
+    }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Game");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setUndecorated(true);
+        /*frame.setUndecorated(true);*/
         frame.setResizable(false);
         frame.add(new Main());
         frame.pack();
