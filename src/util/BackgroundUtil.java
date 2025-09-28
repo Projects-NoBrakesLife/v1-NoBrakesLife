@@ -1,3 +1,6 @@
+package util;
+
+import core.Config;
 import java.awt.*;
 
 public class BackgroundUtil {
