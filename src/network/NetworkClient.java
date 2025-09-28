@@ -48,6 +48,7 @@ public class NetworkClient {
             } catch (Exception e) {
                 System.out.println("Connection error: " + e.getMessage());
                 isConnected = false;
+                showConnectionError();
             }
         }).start();
     }
@@ -113,5 +114,20 @@ public class NetworkClient {
         } catch (IOException e) {
             System.out.println("Disconnect error: " + e.getMessage());
         }
+    }
+    
+    private void showConnectionError() {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            javax.swing.JOptionPane.showMessageDialog(null, 
+                "Server connection error\n\n" +
+
+                "Game will close in 3 seconds...", 
+                "Connection Error", 
+                javax.swing.JOptionPane.ERROR_MESSAGE);
+            
+            new javax.swing.Timer(3000, e -> {
+                System.exit(0);
+            }).start();
+        });
     }
 }
