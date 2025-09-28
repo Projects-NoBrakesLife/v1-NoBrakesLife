@@ -1,3 +1,5 @@
+package ui;
+
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -5,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-
+import util.SoundPlayer;
 
 class CustomPanel extends JPanel {
     private boolean restHovered = false;

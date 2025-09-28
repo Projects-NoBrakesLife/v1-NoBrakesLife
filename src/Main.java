@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import core.*;
+import ui.WindowManager;
+import util.*;
 
 public class Main extends JPanel {
     private final Image background;
@@ -22,7 +25,7 @@ public class Main extends JPanel {
     private final SoundPlayer soundPlayer = new SoundPlayer();
     private final WindowManager windowManager = new WindowManager();
     private boolean soundPlayed = false;
-    private Character character;
+    private core.Character character;
     private PlayerState playerState;
     private boolean debugMode = false;
     private java.util.List<Point> pathPoints = new java.util.ArrayList<>();
@@ -43,7 +46,7 @@ public class Main extends JPanel {
         setFocusable(true);
         requestFocusInWindow();
         
-        character = new Character(new Point(878, 280));
+        character = new core.Character(new Point(878, 280));
         playerState = new PlayerState();
         System.out.println("Character created");
         playerState.printStatus();

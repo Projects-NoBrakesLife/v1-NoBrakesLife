@@ -1,3 +1,5 @@
+package ui;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -7,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import util.BackgroundUtil;
 
 public class PathEditor extends JPanel {
     private List<Point> pathPoints = new ArrayList<>();
