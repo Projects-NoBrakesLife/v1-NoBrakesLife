@@ -14,6 +14,11 @@ public class GameServer extends JFrame {
     private Map<Socket, String> clientConnections = new ConcurrentHashMap<>();
     private JTextArea logArea;
     private JLabel playerCountLabel;
+    private JButton startBtn;
+    private JButton stopBtn;
+    private JList<String> playerList;
+    private DefaultListModel<String> playerListModel;
+    private JButton kickBtn;
     private boolean isRunning = false;
     
     public GameServer() {
@@ -28,25 +33,71 @@ public class GameServer extends JFrame {
     private void setupUI() {
         setLayout(new BorderLayout());
         
+ 
         JPanel topPanel = new JPanel(new FlowLayout());
-        JButton startBtn = new JButton("Start Server");
-        JButton stopBtn = new JButton("Stop Server");
+        topPanel.setBackground(new Color(240, 240, 240));
+        
+        startBtn = new JButton("Start Server");
+        stopBtn = new JButton("Stop Server");
         playerCountLabel = new JLabel("Players: 0");
+        
+        startBtn.setBackground(new Color(76, 175, 80));
+        startBtn.setForeground(Color.WHITE);
+        startBtn.setFocusPainted(false);
+        
+        stopBtn.setBackground(new Color(244, 67, 54));
+        stopBtn.setForeground(Color.WHITE);
+        stopBtn.setFocusPainted(false);
+        stopBtn.setEnabled(false);
         
         startBtn.addActionListener(e -> startServer());
         stopBtn.addActionListener(e -> stopServer());
         
         topPanel.add(startBtn);
         topPanel.add(stopBtn);
+        topPanel.add(Box.createHorizontalStrut(20));
         topPanel.add(playerCountLabel);
         
+
+        JSplitPane centerSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        
+    
         logArea = new JTextArea();
         logArea.setEditable(false);
-        logArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        JScrollPane scrollPane = new JScrollPane(logArea);
+        logArea.setFont(new Font("Consolas", Font.PLAIN, 11));
+        logArea.setBackground(new Color(30, 30, 30));
+        logArea.setForeground(new Color(200, 200, 200));
+        JScrollPane logScroll = new JScrollPane(logArea);
+        logScroll.setBorder(BorderFactory.createTitledBorder("Server Log"));
+        
+        JPanel playerPanel = new JPanel(new BorderLayout());
+        playerPanel.setBorder(BorderFactory.createTitledBorder("Online Players"));
+        
+        playerListModel = new DefaultListModel<>();
+        playerList = new JList<>(playerListModel);
+        playerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane playerScroll = new JScrollPane(playerList);
+        
+        kickBtn = new JButton("Kick Player");
+        kickBtn.setBackground(new Color(255, 152, 0));
+        kickBtn.setForeground(Color.WHITE);
+        kickBtn.setFocusPainted(false);
+        kickBtn.setEnabled(false);
+        kickBtn.addActionListener(e -> kickSelectedPlayer());
+        
+        playerList.addListSelectionListener(e -> {
+            kickBtn.setEnabled(!playerList.isSelectionEmpty());
+        });
+        
+        playerPanel.add(playerScroll, BorderLayout.CENTER);
+        playerPanel.add(kickBtn, BorderLayout.SOUTH);
+        
+        centerSplit.setLeftComponent(logScroll);
+        centerSplit.setRightComponent(playerPanel);
+        centerSplit.setDividerLocation(400);
         
         add(topPanel, BorderLayout.NORTH);
-        add(scrollPane, BorderLayout.CENTER);
+        add(centerSplit, BorderLayout.CENTER);
     }
     
     private void startServer() {
@@ -57,6 +108,12 @@ public class GameServer extends JFrame {
                 serverSocket = new ServerSocket(PORT);
                 isRunning = true;
                 log("Server started on port " + PORT);
+                
+                SwingUtilities.invokeLater(() -> {
+                    startBtn.setEnabled(false);
+                    startBtn.setText("Server Running");
+                    stopBtn.setEnabled(true);
+                });
                 
                 while (isRunning) {
                     Socket client = serverSocket.accept();
@@ -84,6 +141,13 @@ public class GameServer extends JFrame {
             onlinePlayers.clear();
             log("Server stopped");
             updatePlayerCount();
+            updatePlayerList();
+            
+            SwingUtilities.invokeLater(() -> {
+                startBtn.setEnabled(true);
+                startBtn.setText("Start Server");
+                stopBtn.setEnabled(false);
+            });
         } catch (IOException e) {
             log("Stop error: " + e.getMessage());
         }
@@ -109,6 +173,17 @@ public class GameServer extends JFrame {
                 log("Client handler error: " + e.getMessage());
             } finally {
                 try {
+                    String playerId = clientConnections.get(client);
+                    if (playerId != null) {
+                        onlinePlayers.remove(playerId);
+                        clientConnections.remove(client);
+                        log("Player disconnected: " + playerId);
+                        
+                        NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, playerId);
+                        broadcastMessage(leaveMsg, null);
+                        updatePlayerCount();
+                        updatePlayerList();
+                    }
                     clientOutputs.remove(client);
                     client.close();
                 } catch (IOException e) {
@@ -127,6 +202,7 @@ public class GameServer extends JFrame {
                 log("Player joined: " + msg.playerName + " (" + msg.playerId + ") at " + msg.position + " with " + msg.characterImage);
                 broadcastMessage(msg, sender);
                 updatePlayerCount();
+                updatePlayerList();
                 break;
                 
             case PLAYER_MOVE:
@@ -171,7 +247,8 @@ public class GameServer extends JFrame {
     
     private void log(String message) {
         SwingUtilities.invokeLater(() -> {
-            logArea.append("[" + new Date() + "] " + message + "\n");
+            String timestamp = new java.text.SimpleDateFormat("HH:mm:ss").format(new Date());
+            logArea.append("[" + timestamp + "] " + message + "\n");
             logArea.setCaretPosition(logArea.getDocument().getLength());
         });
     }
@@ -180,6 +257,37 @@ public class GameServer extends JFrame {
         SwingUtilities.invokeLater(() -> {
             playerCountLabel.setText("Players: " + onlinePlayers.size());
         });
+    }
+    
+    private void updatePlayerList() {
+        SwingUtilities.invokeLater(() -> {
+            playerListModel.clear();
+            for (OnlinePlayer player : onlinePlayers.values()) {
+                String displayText = player.playerName + " (" + player.playerId + ") - " + player.characterImage;
+                playerListModel.addElement(displayText);
+            }
+        });
+    }
+    
+    private void kickSelectedPlayer() {
+        String selected = playerList.getSelectedValue();
+        if (selected == null) return;
+        
+    
+        String playerId = selected.substring(selected.indexOf("(") + 1, selected.indexOf(")"));
+        
+     
+        for (Map.Entry<Socket, String> entry : clientConnections.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                try {
+                    entry.getKey().close();
+                    log("Kicked player: " + playerId);
+                } catch (IOException e) {
+                    log("Error kicking player: " + e.getMessage());
+                }
+                break;
+            }
+        }
     }
     
     public static void main(String[] args) {

@@ -15,6 +15,7 @@ public class NetworkManager {
     private String myPlayerId;
     private String myPlayerName;
     private Point myPosition;
+    private String myCharacterImage;
     
     private ServerSocket serverSocket;
     private Socket clientSocket;
@@ -24,10 +25,11 @@ public class NetworkManager {
     private Map<String, OnlinePlayer> onlinePlayers = new ConcurrentHashMap<>();
     private List<NetworkMessage> messageQueue = new ArrayList<>();
     
-    public NetworkManager(String playerId, String playerName, Point startPosition) {
+    public NetworkManager(String playerId, String playerName, Point startPosition, String characterImage) {
         this.myPlayerId = playerId;
         this.myPlayerName = playerName;
         this.myPosition = startPosition;
+        this.myCharacterImage = characterImage;
     }
     
     public void startServer() {
@@ -58,7 +60,7 @@ public class NetworkManager {
                 isConnected = true;
                 System.out.println("Connected to server");
                 
-                sendMessage(NetworkMessage.createPlayerJoin(myPlayerId, myPlayerName, myPosition));
+                sendMessage(NetworkMessage.createPlayerJoin(myPlayerId, myPlayerName, myPosition, myCharacterImage));
                 
                 while (isConnected) {
                     NetworkMessage msg = (NetworkMessage) in.readObject();
@@ -77,11 +79,11 @@ public class NetworkManager {
                 ObjectInputStream clientIn = new ObjectInputStream(client.getInputStream());
                 
                 for (OnlinePlayer player : onlinePlayers.values()) {
-                    NetworkMessage joinMsg = NetworkMessage.createPlayerJoin(player.playerId, player.playerName, player.position);
+                    NetworkMessage joinMsg = NetworkMessage.createPlayerJoin(player.playerId, player.playerName, player.position, player.characterImage);
                     clientOut.writeObject(joinMsg);
                 }
                 
-                NetworkMessage myJoinMsg = NetworkMessage.createPlayerJoin(myPlayerId, myPlayerName, myPosition);
+                NetworkMessage myJoinMsg = NetworkMessage.createPlayerJoin(myPlayerId, myPlayerName, myPosition, myCharacterImage);
                 clientOut.writeObject(myJoinMsg);
                 
                 while (true) {
@@ -112,9 +114,9 @@ public class NetworkManager {
     private void handleMessage(NetworkMessage msg) {
         switch (msg.type) {
             case PLAYER_JOIN:
-                OnlinePlayer newPlayer = new OnlinePlayer(msg.playerId, msg.playerName, msg.position);
+                OnlinePlayer newPlayer = new OnlinePlayer(msg.playerId, msg.playerName, msg.position, msg.characterImage);
                 onlinePlayers.put(msg.playerId, newPlayer);
-                System.out.println("Player joined: " + msg.playerName + " at " + msg.position);
+                System.out.println("Player joined: " + msg.playerName + " at " + msg.position + " with " + msg.characterImage);
                 break;
                 
             case PLAYER_MOVE:

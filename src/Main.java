@@ -31,6 +31,10 @@ public class Main extends JPanel {
     private boolean debugMode = false;
     private NetworkClient networkClient;
     private Map<String, core.Character> onlineCharacters = new HashMap<>();
+    
+   
+    private Point mouseOffset = new Point();
+    private JFrame parentFrame;
     private java.util.List<Point> pathPoints = new java.util.ArrayList<>();
     private Point startPoint = new Point(878, 280);
     
@@ -374,15 +378,46 @@ public class Main extends JPanel {
         
         repaint();
     }
+    
+  
+    public void mousePressed(java.awt.event.MouseEvent e) {
+        mouseOffset.x = e.getX();
+        mouseOffset.y = e.getY();
+    }
+    
+    public void mouseDragged(java.awt.event.MouseEvent e) {
+        if (parentFrame != null) {
+            Point newLocation = new Point(
+                parentFrame.getLocation().x + e.getX() - mouseOffset.x,
+                parentFrame.getLocation().y + e.getY() - mouseOffset.y
+            );
+            parentFrame.setLocation(newLocation);
+        }
+    }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Game");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        /*frame.setUndecorated(true);*/
+        frame.setUndecorated(true);
         frame.setResizable(false);
-        frame.add(new Main());
+        
+        Main gamePanel = new Main();
+        gamePanel.parentFrame = frame;
+        frame.add(gamePanel);
         frame.pack();
         frame.setLocationRelativeTo(null);
+        
+        gamePanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                gamePanel.mousePressed(e);
+            }
+        });
+        
+        gamePanel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            public void mouseDragged(java.awt.event.MouseEvent e) {
+                gamePanel.mouseDragged(e);
+            }
+        });
         try {
             Image cursorImage = ImageIO.read(new File("assets/ui/cone.png"));
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
