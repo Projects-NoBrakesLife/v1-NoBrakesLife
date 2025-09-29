@@ -1,3 +1,5 @@
+package core;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -9,18 +11,40 @@ public class Character {
     private Point position;
     private int width = 64;
     private int height = 64;
+    private String imagePath;
     
     public Character(Point startPosition) {
         this.position = new Point(startPosition);
         
+        String[] characterImages = {"./assets/players/Male-01.png", "./assets/players/Male-02.png"};
+        this.imagePath = characterImages[(int)(Math.random() * characterImages.length)];
+        
         try {
-            characterImage = ImageIO.read(new File("./assets/players/Male-02.png"));
-            System.out.println("Character image loaded successfully");
+            characterImage = ImageIO.read(new File(imagePath));
+            System.out.println("Character image loaded successfully: " + imagePath);
         } catch (IOException e) {
             System.out.println("Could not load character image: " + e.getMessage());
         }
         
         System.out.println("Character created at: " + startPosition);
+    }
+    
+    public Character(Point startPosition, String imagePath) {
+        this.position = new Point(startPosition);
+        this.imagePath = imagePath;
+        
+        try {
+            characterImage = ImageIO.read(new File(imagePath));
+            System.out.println("Character image loaded successfully: " + imagePath);
+        } catch (IOException e) {
+            System.out.println("Could not load character image: " + e.getMessage());
+        }
+        
+        System.out.println("Character created at: " + startPosition);
+    }
+    
+    public String getImagePath() {
+        return imagePath;
     }
     
     public void setPosition(Point newPosition) {

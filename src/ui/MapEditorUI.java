@@ -1,5 +1,8 @@
+package ui;
+
 import java.awt.*;
 import javax.swing.*;
+import core.Config;
 
 public class MapEditorUI extends JFrame {
     private final MapCanvas canvas;
@@ -13,7 +16,6 @@ public class MapEditorUI extends JFrame {
 
         canvas = new MapCanvas("./assets/maps/background-iceland.png");
 
-
         layerModel = new DefaultListModel<>();
         layerList = new JList<>(layerModel);
         layerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -25,7 +27,6 @@ public class MapEditorUI extends JFrame {
         JScrollPane layerScroll = new JScrollPane(layerList);
         layerScroll.setPreferredSize(new Dimension(220, 0));
 
-
         JButton addBtn = new JButton("Add PNG");
         addBtn.addActionListener(e -> {
             MapCanvas.Obj o = canvas.openFileAndAdd();
@@ -34,7 +35,7 @@ public class MapEditorUI extends JFrame {
                 layerList.setSelectedValue(o, true);
             }
         });
-        
+
         JButton happinessBtn = new JButton("Add Happiness");
         happinessBtn.addActionListener(e -> {
             canvas.addHappinessIcon();
@@ -43,7 +44,7 @@ public class MapEditorUI extends JFrame {
                 layerModel.addElement(obj);
             }
         });
-        
+
         JButton clockBtn = new JButton("Add Clock Tower");
         clockBtn.addActionListener(e -> {
             canvas.addClockTower();
@@ -108,7 +109,9 @@ public class MapEditorUI extends JFrame {
         add(new JScrollPane(canvas), BorderLayout.CENTER);
         add(layerScroll, BorderLayout.EAST);
 
-        setSize(1400, 900);
+        int windowWidth = Math.min(1400, Config.GAME_WIDTH + 200);
+        int windowHeight = Math.min(900, Config.GAME_HEIGHT + 150);
+        setSize(windowWidth, windowHeight);
         setLocationRelativeTo(null);
         setVisible(true);
     }

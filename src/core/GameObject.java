@@ -1,12 +1,14 @@
-import javax.swing.*;
+package core;
+
 import java.awt.*;
+import javax.swing.*;
 
 public class GameObject {
-    String file;
-    String name;
-    int x, y, w, h, rotation;
-    Image img;
-    boolean hovered = false;
+    public String file;
+    public String name;
+    public int x, y, w, h, rotation;
+    public Image img;
+    public boolean hovered = false;
 
     public GameObject(String file, String name, int x, int y, int w, int h, int rotation) {
         this.file = file;
