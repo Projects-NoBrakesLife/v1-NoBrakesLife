@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import network.*;
 import ui.WindowManager;
+import ui.CharacterSelection;
 import util.*;
 
 public class Main extends JPanel {
@@ -25,6 +26,7 @@ public class Main extends JPanel {
     private boolean debugMode = false;
     private NetworkClient networkClient;
     private Map<String, core.Character> onlineCharacters = new HashMap<>();
+    private String characterImage;
 
     private Point mouseOffset = new Point();
     private JFrame parentFrame;
@@ -165,6 +167,13 @@ public class Main extends JPanel {
                         (int) (Config.GAME_HEIGHT * 0.646),
                         (int) (Config.GAME_WIDTH * 0.233),
                         (int) (Config.GAME_HEIGHT * 0.437), 0));
+    }
+
+    public void selectCharacter() {
+        String selectedImage = CharacterSelection.showCharacterSelection(parentFrame);
+        characterImage = selectedImage;
+        character = new core.Character(character.getPosition(), selectedImage);
+        System.out.println("Character selected: " + selectedImage);
     }
 
     @Override
@@ -438,6 +447,7 @@ public class Main extends JPanel {
             }
         });
 
+        gamePanel.selectCharacter();
         frame.setVisible(true);
 
     }
