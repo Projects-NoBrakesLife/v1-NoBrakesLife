@@ -91,16 +91,21 @@ public class MapCanvas extends JPanel {
         Obj o = new Obj();
         o.file = f.getPath().replace("\\", "/");
         o.name = f.getName().replace(".png", "").replace("_", " ");
+
+        double scale = Math.min(
+                (double) Config.GAME_WIDTH / 1920.0,
+                (double) Config.GAME_HEIGHT / 1080.0);
+
         o.img = img;
-        o.w = img.getWidth();
-        o.h = img.getHeight();
+        o.w = (int) (img.getWidth() * scale);
+        o.h = (int) (img.getHeight() * scale);
         o.x = Config.GAME_WIDTH / 2 - o.w / 2;
         o.y = Config.GAME_HEIGHT / 2 - o.h / 2;
         objects.add(o);
         repaint();
         return o;
     }
-    
+
     public void addHappinessIcon() {
         try {
             File f = new File("assets/ui/emote/Icon Happiness #6686.png");
@@ -108,7 +113,7 @@ public class MapCanvas extends JPanel {
         } catch (Exception e) {
         }
     }
-    
+
     public void addClockTower() {
         try {
             File f = new File("assets/ui/clock/Clock-Tower.png");
@@ -116,14 +121,15 @@ public class MapCanvas extends JPanel {
         } catch (Exception e) {
         }
     }
-    
+
     public List<Obj> getObjects() {
         return objects;
     }
 
     public void removeObj(Obj o) {
         objects.remove(o);
-        if (selected == o) selected = null;
+        if (selected == o)
+            selected = null;
         repaint();
     }
 
@@ -170,25 +176,37 @@ public class MapCanvas extends JPanel {
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 return addPng(fc.getSelectedFile());
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         return null;
     }
 
     public String exportAsJavaList() {
         StringBuilder sb = new StringBuilder();
-        sb.append("List<GameObject> objects = List.of(\n");
+        sb.append("objects = java.util.List.of(\n");
         for (int i = 0; i < objects.size(); i++) {
             Obj o = objects.get(i);
+
+            double scaleFactor = Math.min(
+                    (double) Config.GAME_WIDTH / 1920.0,
+                    (double) Config.GAME_HEIGHT / 1080.0);
+
+            int originalX = (int) (o.x / scaleFactor);
+            int originalY = (int) (o.y / scaleFactor);
+            int originalW = (int) (o.w / scaleFactor);
+            int originalH = (int) (o.h / scaleFactor);
+
             sb.append("    new GameObject(\"")
                     .append(o.file).append("\", \"")
                     .append(o.name).append("\", ")
-                    .append(o.x).append(", ")
-                    .append(o.y).append(", ")
-                    .append(o.w).append(", ")
-                    .append(o.h).append(", ")
+                    .append(originalX).append(", ")
+                    .append(originalY).append(", ")
+                    .append(originalW).append(", ")
+                    .append(originalH).append(", ")
                     .append((int) o.rotation).append(")");
-            if (i < objects.size() - 1) sb.append(",");
+            if (i < objects.size() - 1)
+                sb.append(",");
             sb.append("\n");
         }
         sb.append(");\n");
