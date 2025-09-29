@@ -50,8 +50,8 @@ public class Main extends JPanel {
 
         initializeObjects();
 
-        int initialX = (int) (Config.GAME_WIDTH * 0.457);
-        int initialY = (int) (Config.GAME_HEIGHT * 0.259);
+        int initialX = 878 + (int) (Math.random() * 40 - 20);
+        int initialY = 280 + (int) (Math.random() * 40 - 20);
         startPoint = new Point(initialX, initialY);
         character = new core.Character(new Point(initialX, initialY));
         playerState = new PlayerState();
@@ -152,21 +152,9 @@ public class Main extends JPanel {
     private void initializeObjects() {
         objects = java.util.List.of(
                 new GameObject("./assets/maps/obj/Apartment_Shitty-0.png",
-                        "Apartment Shitty-0",
-                        (int) (Config.GAME_WIDTH * 0.457),
-                        (int) (Config.GAME_HEIGHT * 0.054),
-                        (int) (Config.GAME_WIDTH * 0.089),
-                        (int) (Config.GAME_HEIGHT * 0.197), 0),
-                new GameObject("./assets/maps/obj/Bank-0.png", "Bank-0",
-                        (int) (Config.GAME_WIDTH * 0.700),
-                        (int) (Config.GAME_HEIGHT * 0.303),
-                        (int) (Config.GAME_WIDTH * 0.125),
-                        (int) (Config.GAME_HEIGHT * 0.172), 90),
-                new GameObject("./assets/ui/clock/Clock-Tower.png", "Clock-Tower",
-                        (int) (Config.GAME_WIDTH * 0.383),
-                        (int) (Config.GAME_HEIGHT * 0.646),
-                        (int) (Config.GAME_WIDTH * 0.233),
-                        (int) (Config.GAME_HEIGHT * 0.437), 0));
+                        "Apartment Shitty-0", 878, 58, 171, 213, 0),
+                new GameObject("./assets/maps/obj/Bank-0.png", "Bank-0", 1344, 327, 241, 186, 90),
+                new GameObject("./assets/ui/clock/Clock-Tower.png", "Clock-Tower", 735, 698, 447, 472, 0));
     }
 
     public void selectCharacter() {
@@ -252,13 +240,13 @@ public class Main extends JPanel {
 
     private void setupLocationPaths() {
         locationPaths.put(PlayerState.Location.APARTMENT_SHITTY, java.util.List.of(
-                new Point((int) (Config.GAME_WIDTH * 0.457), (int) (Config.GAME_HEIGHT * 0.259))));
+                new Point(878, 280)));
 
         locationPaths.put(PlayerState.Location.BANK, java.util.List.of(
-                new Point((int) (Config.GAME_WIDTH * 0.480), (int) (Config.GAME_HEIGHT * 0.268)),
-                new Point((int) (Config.GAME_WIDTH * 0.637), (int) (Config.GAME_HEIGHT * 0.269)),
-                new Point((int) (Config.GAME_WIDTH * 0.681), (int) (Config.GAME_HEIGHT * 0.514)),
-                new Point((int) (Config.GAME_WIDTH * 0.749), (int) (Config.GAME_HEIGHT * 0.520))));
+                new Point(922, 289),
+                new Point(1223, 291),
+                new Point(1308, 555),
+                new Point(1437, 562)));
     }
 
     private void moveToLocation(PlayerState.Location targetLocation, GameObject obj) {
@@ -290,16 +278,16 @@ public class Main extends JPanel {
     private java.util.List<Point> getPathBetweenLocations(PlayerState.Location from, PlayerState.Location to) {
         if (from == PlayerState.Location.APARTMENT_SHITTY && to == PlayerState.Location.BANK) {
             return java.util.List.of(
-                    new Point((int) (Config.GAME_WIDTH * 0.480), (int) (Config.GAME_HEIGHT * 0.268)),
-                    new Point((int) (Config.GAME_WIDTH * 0.637), (int) (Config.GAME_HEIGHT * 0.269)),
-                    new Point((int) (Config.GAME_WIDTH * 0.681), (int) (Config.GAME_HEIGHT * 0.514)),
-                    new Point((int) (Config.GAME_WIDTH * 0.749), (int) (Config.GAME_HEIGHT * 0.520)));
+                    new Point(922, 289),
+                    new Point(1223, 291),
+                    new Point(1308, 555),
+                    new Point(1437, 562));
         } else if (from == PlayerState.Location.BANK && to == PlayerState.Location.APARTMENT_SHITTY) {
             return java.util.List.of(
-                    new Point((int) (Config.GAME_WIDTH * 0.681), (int) (Config.GAME_HEIGHT * 0.514)),
-                    new Point((int) (Config.GAME_WIDTH * 0.637), (int) (Config.GAME_HEIGHT * 0.269)),
-                    new Point((int) (Config.GAME_WIDTH * 0.480), (int) (Config.GAME_HEIGHT * 0.268)),
-                    new Point((int) (Config.GAME_WIDTH * 0.457), (int) (Config.GAME_HEIGHT * 0.259)));
+                    new Point(1308, 555),
+                    new Point(1223, 291),
+                    new Point(922, 289),
+                    new Point(878, 280));
         }
         return null;
     }

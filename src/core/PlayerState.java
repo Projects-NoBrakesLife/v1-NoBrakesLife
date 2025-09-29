@@ -20,7 +20,7 @@ public class PlayerState {
 
     public PlayerState() {
         this.currentLocation = Location.APARTMENT_SHITTY;
-        this.currentPosition = new Point((int) (Config.GAME_WIDTH * 0.457), (int) (Config.GAME_HEIGHT * 0.278));
+        this.currentPosition = new Point(878, 300);
         this.playerName = "Player";
         this.money = 1000;
         this.health = 100;

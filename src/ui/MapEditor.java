@@ -86,13 +86,9 @@ public class MapEditor extends JPanel {
         o.file = f.getPath().replace("\\", "/");
         o.name = f.getName().replace(".png", "").replace("_", " ");
 
-        double scale = Math.min(
-                (double) Config.GAME_WIDTH / 1920.0,
-                (double) Config.GAME_HEIGHT / 1080.0);
-
         o.img = img;
-        o.w = (int) (img.getWidth() * scale);
-        o.h = (int) (img.getHeight() * scale);
+        o.w = img.getWidth();
+        o.h = img.getHeight();
         o.x = Config.GAME_WIDTH / 2 - o.w / 2;
         o.y = Config.GAME_HEIGHT / 2 - o.h / 2;
         objects.add(o);
@@ -105,14 +101,10 @@ public class MapEditor extends JPanel {
         for (int i = 0; i < objects.size(); i++) {
             Obj o = objects.get(i);
 
-            double scaleFactor = Math.min(
-                    (double) Config.GAME_WIDTH / 1920.0,
-                    (double) Config.GAME_HEIGHT / 1080.0);
-
-            int originalX = (int) (o.x / scaleFactor);
-            int originalY = (int) (o.y / scaleFactor);
-            int originalW = (int) (o.w / scaleFactor);
-            int originalH = (int) (o.h / scaleFactor);
+            int originalX = o.x;
+            int originalY = o.y;
+            int originalW = o.w;
+            int originalH = o.h;
 
             sb.append("    new GameObject(\"")
                     .append(o.file).append("\", \"")

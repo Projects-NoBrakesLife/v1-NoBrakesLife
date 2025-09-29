@@ -99,8 +99,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = Math.min(1500, (int) (Config.GAME_WIDTH * 0.9));
-        int windowHeight = Math.min(800, (int) (Config.GAME_HEIGHT * 0.8));
+        int windowWidth = 1500;
+        int windowHeight = 800;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
@@ -126,10 +126,10 @@ public class WindowManager {
                 }
 
                 float hoverProgress = getHoverProgress();
-                int restWidth = Math.max(150, (int) (getWidth() * 0.15));
-                int restHeight = Math.max(50, (int) (getHeight() * 0.12));
+                int restWidth = 200;
+                int restHeight = 70;
                 int restX = (getWidth() - restWidth) / 2;
-                int restY = (int) (getHeight() - (getHeight() * 0.15));
+                int restY = getHeight() - 120;
 
                 g2d.setColor(new Color(0, 0, 0, 150));
                 g2d.fillRoundRect(restX, restY, restWidth, restHeight, 8, 8);
@@ -237,8 +237,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = Math.min(600, (int) (Config.GAME_WIDTH * 0.4));
-        int windowHeight = Math.min(400, (int) (Config.GAME_HEIGHT * 0.4));
+        int windowWidth = 600;
+        int windowHeight = 400;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
@@ -305,8 +305,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = Math.min(700, (int) (Config.GAME_WIDTH * 0.5));
-        int windowHeight = Math.min(500, (int) (Config.GAME_HEIGHT * 0.5));
+        int windowWidth = 700;
+        int windowHeight = 500;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 
@@ -353,8 +353,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = Math.min(600, (int) (Config.GAME_WIDTH * 0.4));
-        int windowHeight = Math.min(400, (int) (Config.GAME_HEIGHT * 0.4));
+        int windowWidth = 600;
+        int windowHeight = 400;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 
@@ -398,8 +398,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = Math.min(600, (int) (Config.GAME_WIDTH * 0.4));
-        int windowHeight = Math.min(400, (int) (Config.GAME_HEIGHT * 0.4));
+        int windowWidth = 600;
+        int windowHeight = 400;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 
@@ -440,8 +440,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = Math.min(400, (int) (Config.GAME_WIDTH * 0.3));
-        int windowHeight = Math.min(300, (int) (Config.GAME_HEIGHT * 0.3));
+        int windowWidth = 400;
+        int windowHeight = 300;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 

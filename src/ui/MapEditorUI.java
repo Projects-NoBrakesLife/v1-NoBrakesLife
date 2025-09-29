@@ -109,8 +109,8 @@ public class MapEditorUI extends JFrame {
         add(new JScrollPane(canvas), BorderLayout.CENTER);
         add(layerScroll, BorderLayout.EAST);
 
-        int windowWidth = Math.min(1400, Config.GAME_WIDTH + 200);
-        int windowHeight = Math.min(900, Config.GAME_HEIGHT + 150);
+        int windowWidth = 1400;
+        int windowHeight = 900;
         setSize(windowWidth, windowHeight);
         setLocationRelativeTo(null);
         setVisible(true);
