@@ -202,6 +202,15 @@ public class GameServer extends JFrame {
                 }
                 break;
                 
+            case PLAYER_UPDATE:
+                OnlinePlayer updatePlayer = onlinePlayers.get(msg.playerId);
+                if (updatePlayer != null) {
+                    updatePlayer.characterImage = msg.characterImage;
+                    log("Player updated character: " + msg.playerId + " to " + msg.characterImage);
+                    broadcastMessage(msg, sender);
+                }
+                break;
+                
             case PLAYER_LEAVE:
                 onlinePlayers.remove(msg.playerId);
                 clientConnections.remove(sender);

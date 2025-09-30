@@ -67,6 +67,18 @@ public class Character {
         }
     }
     
+    public void updateImage(String newImagePath) {
+        if (!newImagePath.equals(this.imagePath)) {
+            this.imagePath = newImagePath;
+            try {
+                characterImage = ImageIO.read(new File(imagePath));
+                System.out.println("Character image updated to: " + imagePath);
+            } catch (IOException e) {
+                System.out.println("Could not update character image: " + e.getMessage());
+            }
+        }
+    }
+    
     public boolean isMoving() {
         return false;
     }

@@ -73,6 +73,16 @@ public class NetworkClient {
                 }
                 break;
                 
+            case PLAYER_UPDATE:
+                if (!msg.playerId.equals(myPlayerId)) {
+                    OnlinePlayer player = onlinePlayers.get(msg.playerId);
+                    if (player != null) {
+                        player.characterImage = msg.characterImage;
+                        System.out.println("Player updated character: " + msg.playerId + " to " + msg.characterImage);
+                    }
+                }
+                break;
+                
             case PLAYER_LEAVE:
                 onlinePlayers.remove(msg.playerId);
                 System.out.println("Player left: " + msg.playerId);
@@ -84,6 +94,13 @@ public class NetworkClient {
         myPosition = newPosition;
         if (isConnected) {
             sendMessage(NetworkMessage.createPlayerMove(myPlayerId, newPosition));
+        }
+    }
+    
+    public void updateCharacterImage(String newCharacterImage) {
+        myCharacterImage = newCharacterImage;
+        if (isConnected) {
+            sendMessage(NetworkMessage.createPlayerUpdate(myPlayerId, myPlayerName, myPosition, myCharacterImage));
         }
     }
     

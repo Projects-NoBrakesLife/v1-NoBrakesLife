@@ -152,6 +152,7 @@ public class GamePanel extends JPanel {
     public void selectCharacter() {
         String selectedImage = CharacterSelection.showCharacterSelection(parentFrame);
         character = new core.Character(character.getPosition(), selectedImage);
+        networkClient.updateCharacterImage(selectedImage);
         System.out.println("Character selected: " + selectedImage);
     }
 
@@ -318,7 +319,9 @@ public class GamePanel extends JPanel {
                 onlineCharacters.put(playerId, new core.Character(player.position, player.characterImage));
                 System.out.println("Created online character for: " + playerId + " with " + player.characterImage);
             } else {
-                onlineCharacters.get(playerId).setPosition(player.position);
+                core.Character existingChar = onlineCharacters.get(playerId);
+                existingChar.setPosition(player.position);
+                existingChar.updateImage(player.characterImage);
             }
         }
 
