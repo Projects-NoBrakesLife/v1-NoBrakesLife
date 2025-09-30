@@ -1,122 +1,211 @@
 package ui;
 
-import java.awt.*;
-import javax.swing.*;
 import core.Config;
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionEvent;
+import javax.swing.*;
 
 public class MapEditorUI extends JFrame {
-    private final MapCanvas canvas;
-    private final DefaultListModel<MapCanvas.Obj> layerModel;
-    private final JList<MapCanvas.Obj> layerList;
+    private MapEditor mapEditor;
+    private JTextArea outputArea;
 
     public MapEditorUI() {
-        super("Map Editor Tool");
+        setTitle("Map Editor");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1200, 800);
+        setLocationRelativeTo(null);
+
+        mapEditor = new MapEditor("./assets/maps/background-iceland.png");
+        mapEditor.loadRoadPoints(Config.ROAD_POINTS);
+
+        setupUI();
+        setupKeyBindings();
+    }
+
+    private void setupUI() {
         setLayout(new BorderLayout());
 
-        canvas = new MapCanvas("./assets/maps/background-iceland.png");
-
-        layerModel = new DefaultListModel<>();
-        layerList = new JList<>(layerModel);
-        layerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        layerList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                canvas.setSelected(layerList.getSelectedValue());
-            }
-        });
-        JScrollPane layerScroll = new JScrollPane(layerList);
-        layerScroll.setPreferredSize(new Dimension(220, 0));
-
-        JButton addBtn = new JButton("Add PNG");
-        addBtn.addActionListener(e -> {
-            MapCanvas.Obj o = canvas.openFileAndAdd();
-            if (o != null) {
-                layerModel.addElement(o);
-                layerList.setSelectedValue(o, true);
+        JPanel controlPanel = new JPanel(new FlowLayout());
+        
+        JButton addPngButton = new JButton("Add PNG");
+        addPngButton.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser("./assets/maps/obj/");
+            fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PNG files", "png"));
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                try {
+                    mapEditor.addPng(fc.getSelectedFile());
+                } catch (Exception ex) {
+                    JOptionPane optionPane = new JOptionPane("Error loading file: " + ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+                    optionPane.setFont(util.FontManager.getFontForText("Error loading file", 12));
+                    JDialog dialog = optionPane.createDialog(this, "Error");
+                    dialog.setFont(util.FontManager.getFontForText("Error", 12));
+                    dialog.setVisible(true);
+                }
             }
         });
 
-        JButton happinessBtn = new JButton("Add Happiness");
-        happinessBtn.addActionListener(e -> {
-            canvas.addHappinessIcon();
-            layerModel.clear();
-            for (MapCanvas.Obj obj : canvas.getObjects()) {
-                layerModel.addElement(obj);
+        JButton roadEditButton = new JButton("Toggle Road Edit");
+        roadEditButton.addActionListener(e -> mapEditor.toggleRoadEditMode());
+
+        JButton showRoadsButton = new JButton("Toggle Show Roads");
+        showRoadsButton.addActionListener(e -> mapEditor.toggleShowRoads());
+
+        JButton exportObjectsButton = new JButton("Export Objects");
+        exportObjectsButton.addActionListener(e -> {
+            String code = mapEditor.exportAsJavaList();
+            outputArea.setText(code);
+            copyToClipboard(code);
+        });
+
+        JButton exportRoadsButton = new JButton("Export Roads");
+        exportRoadsButton.addActionListener(e -> {
+            String code = mapEditor.exportRoadPoints();
+            outputArea.setText(code);
+            copyToClipboard(code);
+        });
+
+        JButton clearOutputButton = new JButton("Clear Output");
+        clearOutputButton.addActionListener(e -> outputArea.setText(""));
+
+        JButton rotateLeftButton = new JButton("Rotate Left");
+        rotateLeftButton.addActionListener(e -> mapEditor.rotateSelectedObject(-15));
+
+        JButton rotateRightButton = new JButton("Rotate Right");
+        rotateRightButton.addActionListener(e -> mapEditor.rotateSelectedObject(15));
+
+        JButton zoomInButton = new JButton("Zoom In");
+        zoomInButton.addActionListener(e -> mapEditor.zoomIn());
+
+        JButton zoomOutButton = new JButton("Zoom Out");
+        zoomOutButton.addActionListener(e -> mapEditor.zoomOut());
+
+        JButton resetZoomButton = new JButton("Reset Zoom");
+        resetZoomButton.addActionListener(e -> mapEditor.resetZoom());
+
+        controlPanel.add(addPngButton);
+        controlPanel.add(roadEditButton);
+        controlPanel.add(showRoadsButton);
+        controlPanel.add(exportObjectsButton);
+        controlPanel.add(exportRoadsButton);
+        controlPanel.add(clearOutputButton);
+        controlPanel.add(rotateLeftButton);
+        controlPanel.add(rotateRightButton);
+        controlPanel.add(zoomInButton);
+        controlPanel.add(zoomOutButton);
+        controlPanel.add(resetZoomButton);
+
+        outputArea = new JTextArea(10, 50);
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        outputArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(outputArea);
+
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mapEditor, scrollPane);
+        splitPane.setDividerLocation(800);
+
+        add(controlPanel, BorderLayout.NORTH);
+        add(splitPane, BorderLayout.CENTER);
+
+        JLabel statusLabel = new JLabel("Map Editor - Mouse: edit objects | R: road edit | Q/W: rotate | +/-: zoom | 0: reset zoom");
+        add(statusLabel, BorderLayout.SOUTH);
+    }
+
+    private void setupKeyBindings() {
+        InputMap inputMap = mapEditor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = mapEditor.getActionMap();
+
+        inputMap.put(KeyStroke.getKeyStroke("R"), "toggleRoadEdit");
+        actionMap.put("toggleRoadEdit", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.toggleRoadEditMode();
             }
         });
 
-        JButton clockBtn = new JButton("Add Clock Tower");
-        clockBtn.addActionListener(e -> {
-            canvas.addClockTower();
-            layerModel.clear();
-            for (MapCanvas.Obj obj : canvas.getObjects()) {
-                layerModel.addElement(obj);
+        inputMap.put(KeyStroke.getKeyStroke("V"), "toggleShowRoads");
+        actionMap.put("toggleShowRoads", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.toggleShowRoads();
             }
         });
 
-        JButton deleteBtn = new JButton("Delete");
-        deleteBtn.addActionListener(e -> {
-            MapCanvas.Obj sel = layerList.getSelectedValue();
-            if (sel != null) {
-                canvas.removeObj(sel);
-                layerModel.removeElement(sel);
+        inputMap.put(KeyStroke.getKeyStroke("E"), "exportObjects");
+        actionMap.put("exportObjects", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String code = mapEditor.exportAsJavaList();
+                outputArea.setText(code);
+                copyToClipboard(code);
             }
         });
 
-        JButton duplicateBtn = new JButton("Duplicate");
-        duplicateBtn.addActionListener(e -> {
-            canvas.duplicateSelected();
-            MapCanvas.Obj sel = canvas.openFileAndAdd();
-            if (sel != null) {
-                layerModel.addElement(sel);
-                layerList.setSelectedValue(sel, true);
+        inputMap.put(KeyStroke.getKeyStroke("T"), "exportRoads");
+        actionMap.put("exportRoads", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String code = mapEditor.exportRoadPoints();
+                outputArea.setText(code);
+                copyToClipboard(code);
             }
         });
 
-        JButton rotateL = new JButton("⟲ Left");
-        rotateL.addActionListener(e -> canvas.rotateSelected(-5));
-
-        JButton rotateR = new JButton("⟳ Right");
-        rotateR.addActionListener(e -> canvas.rotateSelected(5));
-
-        JButton zoomIn = new JButton("＋");
-        zoomIn.addActionListener(e -> canvas.scaleSelected(1.1));
-
-        JButton zoomOut = new JButton("－");
-        zoomOut.addActionListener(e -> canvas.scaleSelected(0.9));
-
-        JButton exportBtn = new JButton("Export Java");
-        exportBtn.addActionListener(e -> {
-            String code = canvas.exportAsJavaList();
-            JTextArea area = new JTextArea(code, 12, 70);
-            area.setFont(new Font("Monospaced", Font.PLAIN, 14));
-            JOptionPane.showMessageDialog(this, new JScrollPane(area), "Exported Java Code", JOptionPane.PLAIN_MESSAGE);
+        inputMap.put(KeyStroke.getKeyStroke("Q"), "rotateLeft");
+        actionMap.put("rotateLeft", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.rotateSelectedObject(-15);
+            }
         });
 
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        toolbar.add(addBtn);
-        toolbar.add(happinessBtn);
-        toolbar.add(clockBtn);
-        toolbar.add(deleteBtn);
-        toolbar.add(duplicateBtn);
-        toolbar.add(rotateL);
-        toolbar.add(rotateR);
-        toolbar.add(zoomIn);
-        toolbar.add(zoomOut);
-        toolbar.add(exportBtn);
+        inputMap.put(KeyStroke.getKeyStroke("W"), "rotateRight");
+        actionMap.put("rotateRight", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.rotateSelectedObject(15);
+            }
+        });
 
-        add(toolbar, BorderLayout.NORTH);
-        add(new JScrollPane(canvas), BorderLayout.CENTER);
-        add(layerScroll, BorderLayout.EAST);
+        inputMap.put(KeyStroke.getKeyStroke("PLUS"), "zoomIn");
+        actionMap.put("zoomIn", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.zoomIn();
+            }
+        });
 
-        int windowWidth = Math.min(1400, Config.GAME_WIDTH + 200);
-        int windowHeight = Math.min(900, Config.GAME_HEIGHT + 150);
-        setSize(windowWidth, windowHeight);
-        setLocationRelativeTo(null);
-        setVisible(true);
+        inputMap.put(KeyStroke.getKeyStroke("MINUS"), "zoomOut");
+        actionMap.put("zoomOut", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.zoomOut();
+            }
+        });
+
+        inputMap.put(KeyStroke.getKeyStroke("0"), "resetZoom");
+        actionMap.put("resetZoom", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.resetZoom();
+            }
+        });
+    }
+
+    private void copyToClipboard(String text) {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(new StringSelection(text), null);
+        JOptionPane optionPane = new JOptionPane("Code copied to clipboard!", JOptionPane.INFORMATION_MESSAGE);
+        optionPane.setFont(util.FontManager.getFontForText("Code copied to clipboard!", 12));
+        JDialog dialog = optionPane.createDialog(this, "Success");
+        dialog.setFont(util.FontManager.getFontForText("Success", 12));
+        dialog.setVisible(true);
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(MapEditorUI::new);
+        SwingUtilities.invokeLater(() -> {
+
+            new MapEditorUI().setVisible(true);
+        });
     }
 }

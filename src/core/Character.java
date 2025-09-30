@@ -9,24 +9,24 @@ import javax.imageio.ImageIO;
 public class Character {
     private BufferedImage characterImage;
     private Point position;
-    private int width = 64;
-    private int height = 64;
+    private int width = Config.CHARACTER_WIDTH;
+    private int height = Config.CHARACTER_HEIGHT;
     private String imagePath;
     
     public Character(Point startPosition) {
         this.position = new Point(startPosition);
         
-        String[] characterImages = {"./assets/players/Male-01.png", "./assets/players/Male-02.png"};
+        String[] characterImages = {Lang.MALE_01, Lang.MALE_02};
         this.imagePath = characterImages[(int)(Math.random() * characterImages.length)];
         
         try {
             characterImage = ImageIO.read(new File(imagePath));
-            System.out.println("Character image loaded successfully: " + imagePath);
+            Debug.log(Lang.CHARACTER_IMAGE_LOADED + imagePath);
         } catch (IOException e) {
-            System.out.println("Could not load character image: " + e.getMessage());
+            Debug.error(Lang.CHARACTER_IMAGE_ERROR + e.getMessage());
         }
         
-        System.out.println("Character created at: " + startPosition);
+        Debug.log(Lang.CHARACTER_CREATED_AT + startPosition);
     }
     
     public Character(Point startPosition, String imagePath) {
@@ -35,12 +35,12 @@ public class Character {
         
         try {
             characterImage = ImageIO.read(new File(imagePath));
-            System.out.println("Character image loaded successfully: " + imagePath);
+            Debug.log(Lang.CHARACTER_IMAGE_LOADED + imagePath);
         } catch (IOException e) {
-            System.out.println("Could not load character image: " + e.getMessage());
+            Debug.error(Lang.CHARACTER_IMAGE_ERROR + e.getMessage());
         }
         
-        System.out.println("Character created at: " + startPosition);
+        Debug.log(Lang.CHARACTER_CREATED_AT + startPosition);
     }
     
     public String getImagePath() {
@@ -49,7 +49,7 @@ public class Character {
     
     public void setPosition(Point newPosition) {
         this.position = new Point(newPosition);
-        System.out.println("Character position set to: " + position);
+        Debug.log(Lang.CHARACTER_POSITION_SET + position);
     }
     
     public Point getPosition() {
@@ -63,7 +63,19 @@ public class Character {
             g2d.setColor(Color.RED);
             g2d.fillOval(position.x - width/2, position.y - height/2, width, height);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("NO IMAGE", position.x - 20, position.y);
+            g2d.drawString(Lang.NO_IMAGE, position.x - 20, position.y);
+        }
+    }
+    
+    public void updateImage(String newImagePath) {
+        if (!newImagePath.equals(this.imagePath)) {
+            this.imagePath = newImagePath;
+            try {
+                characterImage = ImageIO.read(new File(imagePath));
+                Debug.log(Lang.CHARACTER_IMAGE_UPDATED + imagePath);
+            } catch (IOException e) {
+                Debug.error(Lang.CHARACTER_IMAGE_UPDATE_ERROR + e.getMessage());
+            }
         }
     }
     

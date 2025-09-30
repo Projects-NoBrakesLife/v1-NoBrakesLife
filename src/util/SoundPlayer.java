@@ -1,19 +1,20 @@
 package util;
 
+import core.Config;
+import core.Debug;
 import java.io.File;
 import java.io.IOException;
 import javax.sound.sampled.*;
 
 public class SoundPlayer {
     private long lastPlayTime = 0;
-    private static final long MIN_PLAY_INTERVAL = 100; 
 
     public SoundPlayer() {
     }
 
     public void play(String filePath) {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastPlayTime < MIN_PLAY_INTERVAL) {
+        if (currentTime - lastPlayTime < Config.SOUND_MIN_PLAY_INTERVAL) {
             return; 
         }
         
@@ -26,6 +27,7 @@ public class SoundPlayer {
             clip.start();
             lastPlayTime = currentTime;
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            Debug.error("Failed to play sound: " + filePath, e);
         }
     }
 }

@@ -73,6 +73,16 @@ public class NetworkClient {
                 }
                 break;
                 
+            case PLAYER_UPDATE:
+                if (!msg.playerId.equals(myPlayerId)) {
+                    OnlinePlayer player = onlinePlayers.get(msg.playerId);
+                    if (player != null) {
+                        player.characterImage = msg.characterImage;
+                        System.out.println("Player updated character: " + msg.playerId + " to " + msg.characterImage);
+                    }
+                }
+                break;
+                
             case PLAYER_LEAVE:
                 onlinePlayers.remove(msg.playerId);
                 System.out.println("Player left: " + msg.playerId);
@@ -84,6 +94,13 @@ public class NetworkClient {
         myPosition = newPosition;
         if (isConnected) {
             sendMessage(NetworkMessage.createPlayerMove(myPlayerId, newPosition));
+        }
+    }
+    
+    public void updateCharacterImage(String newCharacterImage) {
+        myCharacterImage = newCharacterImage;
+        if (isConnected) {
+            sendMessage(NetworkMessage.createPlayerUpdate(myPlayerId, myPlayerName, myPosition, myCharacterImage));
         }
     }
     
@@ -118,12 +135,15 @@ public class NetworkClient {
     
     private void showConnectionError() {
         javax.swing.SwingUtilities.invokeLater(() -> {
-            javax.swing.JOptionPane.showMessageDialog(null, 
+            javax.swing.JOptionPane optionPane = new javax.swing.JOptionPane(
                 "Server connection error\n\n" +
-
                 "Game will close in 3 seconds...", 
-                "Connection Error", 
                 javax.swing.JOptionPane.ERROR_MESSAGE);
+            optionPane.setFont(util.FontManager.getFontForText("Server connection error", 14));
+            
+            javax.swing.JDialog dialog = optionPane.createDialog(null, "Connection Error");
+            dialog.setFont(util.FontManager.getFontForText("Connection Error", 14));
+            dialog.setVisible(true);
             
             new javax.swing.Timer(3000, e -> {
                 System.exit(0);
