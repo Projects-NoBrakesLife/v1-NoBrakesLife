@@ -8,9 +8,9 @@ public class PlayerState {
         BANK,
         TECH,
         JOB_OFFICE,
-        CLOCK_TOWER,
-        SHOP,
-        HOSPITAL
+        CULTURE,
+        UNIVERSITY
+     
     }
 
     private Location currentLocation;
@@ -23,10 +23,10 @@ public class PlayerState {
     public PlayerState() {
         this.currentLocation = Location.APARTMENT_SHITTY;
         this.currentPosition = new Point(878, 300);
-        this.playerName = "Player";
-        this.money = 1000;
-        this.health = 100;
-        this.energy = 100;
+        this.playerName = Lang.DEFAULT_PLAYER_NAME;
+        this.money = Config.STARTING_MONEY;
+        this.health = Config.STARTING_HEALTH;
+        this.energy = Config.STARTING_ENERGY;
     }
 
     public Location getCurrentLocation() {
@@ -35,7 +35,7 @@ public class PlayerState {
 
     public void setCurrentLocation(Location location) {
         this.currentLocation = location;
-        System.out.println("Player moved to: " + location);
+        Debug.log(Lang.PLAYER_MOVED_TO + location);
     }
 
     public Point getCurrentPosition() {
@@ -44,7 +44,7 @@ public class PlayerState {
 
     public void setCurrentPosition(Point position) {
         this.currentPosition = new Point(position);
-        System.out.println("Player position set to: " + position);
+        Debug.log(Lang.PLAYER_POSITION_SET + position);
     }
 
     public String getPlayerName() {
@@ -65,13 +65,13 @@ public class PlayerState {
 
     public void addMoney(int amount) {
         this.money += amount;
-        System.out.println("Money added: " + amount + ", Total: " + this.money);
+        Debug.log(Lang.MONEY_ADDED + amount + Lang.TOTAL + this.money);
     }
 
     public boolean spendMoney(int amount) {
         if (this.money >= amount) {
             this.money -= amount;
-            System.out.println("Money spent: " + amount + ", Remaining: " + this.money);
+            Debug.log(Lang.MONEY_SPENT + amount + Lang.REMAINING + this.money);
             return true;
         }
         return false;
@@ -87,12 +87,12 @@ public class PlayerState {
 
     public void addHealth(int amount) {
         setHealth(this.health + amount);
-        System.out.println("Health added: " + amount + ", Current: " + this.health);
+        Debug.log(Lang.HEALTH_ADDED + amount + Lang.HEALTH_CURRENT + this.health);
     }
 
     public void takeDamage(int damage) {
         setHealth(this.health - damage);
-        System.out.println("Damage taken: " + damage + ", Health: " + this.health);
+        Debug.log(Lang.DAMAGE_TAKEN + damage + Lang.HEALTH_STATUS + this.health);
     }
 
     public int getEnergy() {
@@ -105,33 +105,33 @@ public class PlayerState {
 
     public void addEnergy(int amount) {
         setEnergy(this.energy + amount);
-        System.out.println("Energy added: " + amount + ", Current: " + this.energy);
+        Debug.log(Lang.ENERGY_ADDED + amount + Lang.HEALTH_CURRENT + this.energy);
     }
 
     public void useEnergy(int amount) {
         setEnergy(this.energy - amount);
-        System.out.println("Energy used: " + amount + ", Remaining: " + this.energy);
+        Debug.log(Lang.ENERGY_USED + amount + Lang.REMAINING + this.energy);
     }
 
     public void rest() {
-        addHealth(20);
-        addEnergy(30);
-        System.out.println("Player rested - Health: " + health + ", Energy: " + energy);
+        addHealth(Config.REST_HEALTH_GAIN);
+        addEnergy(Config.REST_ENERGY_GAIN);
+        Debug.log(Lang.PLAYER_RESTED + health + Lang.ENERGY_STATUS + energy);
     }
 
     public String getStatusString() {
-        return String.format("Location: %s | Position: (%d, %d) | Money: %d | Health: %d | Energy: %d",
+        return String.format(Lang.LOCATION_FORMAT,
                 currentLocation, currentPosition.x, currentPosition.y, money, health, energy);
     }
 
     public void printStatus() {
-        System.out.println("=== Player Status ===");
-        System.out.println("Name: " + playerName);
-        System.out.println("Location: " + currentLocation);
-        System.out.println("Position: " + currentPosition);
-        System.out.println("Money: " + money);
-        System.out.println("Health: " + health);
-        System.out.println("Energy: " + energy);
-        System.out.println("===================");
+        Debug.log(Lang.PLAYER_STATUS_HEADER);
+        Debug.log(Lang.PLAYER_NAME + playerName);
+        Debug.log(Lang.PLAYER_LOCATION + currentLocation);
+        Debug.log(Lang.PLAYER_POSITION + currentPosition);
+        Debug.log(Lang.PLAYER_MONEY + money);
+        Debug.log(Lang.PLAYER_HEALTH + health);
+        Debug.log(Lang.PLAYER_ENERGY + energy);
+        Debug.log(Lang.PLAYER_STATUS_FOOTER);
     }
 }

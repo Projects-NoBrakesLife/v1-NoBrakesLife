@@ -13,6 +13,7 @@ import network.OnlinePlayer;
 import ui.CharacterSelection;
 import ui.WindowManager;
 import util.BackgroundUtil;
+import util.FontManager;
 import util.SoundPlayer;
 
 public class GamePanel extends JPanel {
@@ -41,8 +42,8 @@ public class GamePanel extends JPanel {
     private PathFinder pathFinder;
 
     public GamePanel() {
-        background = new ImageIcon("./assets/maps/background-iceland.png").getImage();
-        uiBox = new ImageIcon("./assets/ui/Header_box.png").getImage();
+        background = new ImageIcon(Lang.BACKGROUND_IMAGE).getImage();
+        uiBox = new ImageIcon(Lang.UI_BOX_IMAGE).getImage();
         setPreferredSize(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
         setFocusable(true);
         requestFocusInWindow();
@@ -56,10 +57,10 @@ public class GamePanel extends JPanel {
 
         String playerId = "player" + System.currentTimeMillis();
         String characterImagePath = character.getImagePath();
-        networkClient = new NetworkClient(playerId, "Player", Config.APARTMENT_POINT, characterImagePath);
+        networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, characterImagePath);
         networkClient.connect();
 
-        javax.swing.Timer networkTimer = new javax.swing.Timer(50, e -> {
+        javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, e -> {
             updateOnlinePlayers();
         });
         networkTimer.start();
@@ -80,7 +81,7 @@ public class GamePanel extends JPanel {
                 
                 GameObject newHover = null;
                 for (GameObject obj : objects) {
-                    if (obj.name.equals("Clock-Tower"))
+                    if (obj.name.equals(Lang.CLOCK_TOWER_NAME))
                         continue;
                     boolean inside = obj.contains(e.getPoint());
                     obj.hovered = inside;
@@ -94,7 +95,7 @@ public class GamePanel extends JPanel {
                 }
 
                 if (hoveredObj != null && !soundPlayed) {
-                    soundPlayer.play("./assets/sfx/UI_Click_Organic_mono.wav");
+                    soundPlayer.play(Lang.UI_CLICK_SOUND);
                     soundPlayed = true;
                 }
 
@@ -109,17 +110,17 @@ public class GamePanel extends JPanel {
                     String pointCode = "new Point(" + e.getX() + ", " + e.getY() + ")";
                     java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
                             new java.awt.datatransfer.StringSelection(pointCode), null);
-                    System.out.println("Copied: " + pointCode);
+                    Debug.log(Lang.COPIED + pointCode);
                     return;
                 }
 
                 if (isMoving) {
-                    System.out.println("Character is moving, please wait...");
+                    Debug.log(Lang.CHARACTER_MOVING);
                     return;
                 }
 
                 for (GameObject obj : objects) {
-                    if (obj.name.equals("Clock-Tower"))
+                    if (obj.name.equals(Lang.CLOCK_TOWER_NAME))
                         continue;
                     if (obj.contains(e.getPoint())) {
                         showObjectWindow(obj);
@@ -133,11 +134,14 @@ public class GamePanel extends JPanel {
     private void initializeObjects() {
         objects = java.util.List.of(
                 new GameObject("./assets/maps/obj/Apartment_Shitty-0.png", "./assets/maps/obj/Apartment_Shitty-1.png",
-                        "Apartment Shitty-0",  727, 39, 152, 192, 0),
-                new GameObject("./assets/maps/obj/Bank-0.png", "./assets/maps/obj/Bank-1.png", "Bank-0", 1131, 291, 181, 132, 90),
-                new GameObject("./assets/maps/obj/Tech-0.png", "./assets/maps/obj/Tech-1.png","Tech-0", 1259, 471, 143, 150, 0),
-                new GameObject("./assets/maps/obj/Job_Office-0.png","./assets/maps/obj/Job_Office-1.png", "Job Office-0", 911, 466, 208, 176, 0),
-                new GameObject("./assets/ui/clock/Clock-Tower.png", "Clock-Tower",633, 615, 336, 352, 0));
+                        Lang.APARTMENT_NAME,  727, 39, 152, 192, 0),
+                new GameObject("./assets/maps/obj/Bank-0.png", "./assets/maps/obj/Bank-1.png", Lang.BANK_NAME, 1131, 291, 181, 132, 90),
+                new GameObject("./assets/maps/obj/Tech-0.png", "./assets/maps/obj/Tech-1.png", Lang.TECH_NAME, 1259, 471, 143, 150, 0),
+                new GameObject("./assets/maps/obj/Job_Office-0.png","./assets/maps/obj/Job_Office-1.png", Lang.JOB_OFFICE_NAME, 911, 466, 208, 176, 0),
+                new GameObject("./assets/maps/obj/Culture-0.png","./assets/maps/obj/Culture-1.png", Lang.CULTURE_NAME, 711, 462, 186, 105, 0),
+                new GameObject("./assets/maps/obj/University-0.png", "./assets/maps/obj/University-1.png", Lang.UNIVERSITY_NAME, 462, 489, 168, 129, 0),
+              
+                new GameObject("./assets/ui/clock/Clock-Tower.png", Lang.CLOCK_TOWER_NAME,633, 615, 336, 352, 0));
     }
 
     private void setupLocationPaths() {
@@ -145,6 +149,8 @@ public class GamePanel extends JPanel {
         locationPoints.put(PlayerState.Location.BANK, Config.BANK_POINT);
         locationPoints.put(PlayerState.Location.TECH, Config.TECH_POINT);
         locationPoints.put(PlayerState.Location.JOB_OFFICE, Config.JOB_OFFICE_POINT);
+        locationPoints.put(PlayerState.Location.CULTURE, Config.CULTURE_POINT);
+        locationPoints.put(PlayerState.Location.UNIVERSITY, Config.UNIVERSITY_POINT);
 
         roadPoints.addAll(Config.ROAD_POINTS);
     }
@@ -153,7 +159,7 @@ public class GamePanel extends JPanel {
         String selectedImage = CharacterSelection.showCharacterSelection(parentFrame);
         character = new core.Character(character.getPosition(), selectedImage);
         networkClient.updateCharacterImage(selectedImage);
-        System.out.println("Character selected: " + selectedImage);
+        Debug.log(Lang.CHARACTER_SELECTED + selectedImage);
     }
 
     @Override
@@ -164,7 +170,7 @@ public class GamePanel extends JPanel {
         g.drawImage(background, d.x, d.y, d.width, d.height, this);
 
         for (GameObject obj : objects) {
-            if (obj.name.equals("Clock-Tower")) {
+            if (obj.name.equals(Lang.CLOCK_TOWER_NAME)) {
                 obj.hovered = false;
             }
             obj.draw(g);
@@ -179,11 +185,11 @@ public class GamePanel extends JPanel {
             g.drawImage(uiBox, cx, cy, boxW, boxH, null);
 
             g.setColor(Color.BLACK);
-            g.setFont(new Font("SansSerif", Font.BOLD, 20));
+            g.setFont(FontManager.getFontForText(hoveredObj.name, 20, Font.BOLD));
             FontMetrics fm = g.getFontMetrics();
             int textW = fm.stringWidth(hoveredObj.name);
             int tx = Config.GAME_WIDTH / 2 - textW / 2;
-            int ty = cy + (boxH / 2) + 20;
+            int ty = cy + (boxH / 2) + 30;
 
             g.drawString(hoveredObj.name, tx, ty);
         }
@@ -205,21 +211,27 @@ public class GamePanel extends JPanel {
         }
 
         g.setColor(Color.CYAN);
-        g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        g.drawString("Click on buildings to move automatically!", 10, Config.GAME_HEIGHT - 50);
-        g.drawString("Current: " + playerState.getCurrentLocation(), 10, Config.GAME_HEIGHT - 30);
-        g.drawString("Mouse: " + mousePosition.x + ", " + mousePosition.y, 10, Config.GAME_HEIGHT - 10);
+        g.setFont(FontManager.getFontForText(Lang.CLICK_BUILDINGS_HINT, 14, Font.BOLD));
+        g.drawString(Lang.CLICK_BUILDINGS_HINT, 10, Config.GAME_HEIGHT - 50);
+        g.setFont(FontManager.getFontForText(Lang.CURRENT_LOCATION + playerState.getCurrentLocation(), 14, Font.BOLD));
+        g.drawString(Lang.CURRENT_LOCATION + playerState.getCurrentLocation(), 10, Config.GAME_HEIGHT - 30);
+        g.setFont(FontManager.getFontForText(Lang.MOUSE_POSITION + mousePosition.x + ", " + mousePosition.y, 14, Font.BOLD));
+        g.drawString(Lang.MOUSE_POSITION + mousePosition.x + ", " + mousePosition.y, 10, Config.GAME_HEIGHT - 10);
     }
 
     private void showObjectWindow(GameObject obj) {
-        if (obj.name.equals("Apartment Shitty-0")) {
+        if (obj.name.equals(Lang.APARTMENT_NAME)) {
             moveToLocation(PlayerState.Location.APARTMENT_SHITTY, obj);
-        } else if (obj.name.equals("Bank-0")) {
+        } else if (obj.name.equals(Lang.BANK_NAME)) {
             moveToLocation(PlayerState.Location.BANK, obj);
-        } else if (obj.name.equals("Tech-0")) {
+        } else if (obj.name.equals(Lang.TECH_NAME)) {
             moveToLocation(PlayerState.Location.TECH, obj);
-        } else if (obj.name.equals("Job Office-0")) {
+        } else if (obj.name.equals(Lang.JOB_OFFICE_NAME)) {
             moveToLocation(PlayerState.Location.JOB_OFFICE, obj);
+        } else if (obj.name.equals(Lang.CULTURE_NAME)) {
+            moveToLocation(PlayerState.Location.CULTURE, obj);
+        } else if (obj.name.equals(Lang.UNIVERSITY_NAME)) {
+            moveToLocation(PlayerState.Location.UNIVERSITY, obj);
         }
     }
 
@@ -227,17 +239,17 @@ public class GamePanel extends JPanel {
         PlayerState.Location currentLocation = playerState.getCurrentLocation();
 
         if (currentLocation == targetLocation) {
-            System.out.println("Already at " + targetLocation);
+            Debug.log(Lang.ALREADY_AT_LOCATION + targetLocation);
             showWindowForLocation(targetLocation);
             return;
         }
 
         if (isMoving) {
-            System.out.println("Character is already moving");
+            Debug.log(Lang.ALREADY_MOVING);
             return;
         }
 
-        System.out.println("Moving from " + currentLocation + " to " + targetLocation);
+        Debug.log(Lang.MOVING_FROM_TO + currentLocation + Lang.TO + targetLocation);
 
         Point fromPoint = locationPoints.get(currentLocation);
         Point toPoint = locationPoints.get(targetLocation);
@@ -261,9 +273,9 @@ public class GamePanel extends JPanel {
         this.currentPathIndex = 0;
         this.isMoving = true;
 
-        System.out.println("Starting movement along path with " + path.size() + " points");
+        Debug.log(Lang.STARTING_MOVEMENT + path.size() + Lang.POINTS);
 
-        moveTimer = new javax.swing.Timer(16, e -> {
+        moveTimer = new javax.swing.Timer(Config.MOVEMENT_TIMER_INTERVAL, e -> {
             if (currentPathIndex < currentPath.size()) {
                 Point targetPoint = currentPath.get(currentPathIndex);
                 character.setPosition(targetPoint);
@@ -282,20 +294,24 @@ public class GamePanel extends JPanel {
         moveTimer.stop();
         isMoving = false;
         playerState.setCurrentLocation(targetLocation);
-        System.out.println("Arrived at " + targetLocation);
+        Debug.log(Lang.ARRIVED_AT + targetLocation);
         playerState.printStatus();
         showWindowForLocation(targetLocation);
     }
 
     private void showWindowForLocation(PlayerState.Location location) {
         if (location == PlayerState.Location.APARTMENT_SHITTY) {
-            windowManager.showWindow("apartment", "Crappy Apartment");
+            windowManager.showWindow(Lang.APARTMENT_WINDOW, Lang.APARTMENT_TITLE);
         } else if (location == PlayerState.Location.BANK) {
-            windowManager.showWindow("bank", "Bank");
+            windowManager.showWindow(Lang.BANK_WINDOW, Lang.BANK_TITLE);
         } else if (location == PlayerState.Location.TECH) {
-            windowManager.showWindow("tech", "Tech Store");
+            windowManager.showWindow(Lang.TECH_WINDOW, Lang.TECH_TITLE);
         } else if (location == PlayerState.Location.JOB_OFFICE) {
-            windowManager.showWindow("job", "Job Office");
+            windowManager.showWindow(Lang.JOB_WINDOW, Lang.JOB_TITLE);
+        } else if (location == PlayerState.Location.CULTURE) {
+            windowManager.showWindow(Lang.CULTURE_WINDOW, Lang.CULTURE_TITLE);
+        } else if (location == PlayerState.Location.UNIVERSITY) {
+            windowManager.showWindow(Lang.UNIVERSITY_WINDOW, Lang.UNIVERSITY_TITLE);
         }
     }
 
@@ -317,7 +333,7 @@ public class GamePanel extends JPanel {
             OnlinePlayer player = players.get(playerId);
             if (!onlineCharacters.containsKey(playerId)) {
                 onlineCharacters.put(playerId, new core.Character(player.position, player.characterImage));
-                System.out.println("Created online character for: " + playerId + " with " + player.characterImage);
+                Debug.log(Lang.ONLINE_CHARACTER_CREATED + playerId + Lang.ONLINE_CHARACTER_WITH + player.characterImage);
             } else {
                 core.Character existingChar = onlineCharacters.get(playerId);
                 existingChar.setPosition(player.position);
@@ -328,7 +344,7 @@ public class GamePanel extends JPanel {
         for (String characterId : characterIds) {
             if (!currentPlayerIds.contains(characterId)) {
                 onlineCharacters.remove(characterId);
-                System.out.println("Removed online character for: " + characterId);
+                Debug.log(Lang.ONLINE_CHARACTER_REMOVED + characterId);
             }
         }
 
