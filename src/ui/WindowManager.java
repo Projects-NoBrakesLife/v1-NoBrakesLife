@@ -1,5 +1,7 @@
 package ui;
 
+import core.Config;
+import core.Lang;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -7,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import util.FontManager;
 import util.SoundPlayer;
 
 class CustomPanel extends JPanel {
@@ -89,6 +92,10 @@ public class WindowManager {
                 return createHospitalWindow(title);
             case "clock":
                 return createClockWindow(title);
+            case "culture":
+                return createCultureWindow(title);
+            case "university":
+                return createUniversityWindow(title);
             default:
                 return createDefaultWindow(title);
         }
@@ -98,8 +105,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = 1280;
-        int windowHeight = 720;
+        int windowWidth = Config.WINDOW_WIDTH_APARTMENT;
+        int windowHeight = Config.WINDOW_HEIGHT_APARTMENT;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
@@ -120,15 +127,16 @@ public class WindowManager {
                 } catch (IOException e) {
                     g2d.setColor(Color.BLACK);
                     g2d.fillRect(0, 0, getWidth(), getHeight());
-                    g2d.setColor(Color.WHITE);
-                    g2d.drawString("Image not found: Crappy Apartment Background.png", 50, 50);
+                        g2d.setColor(Color.WHITE);
+                        g2d.setFont(FontManager.getFontForText(Lang.IMAGE_NOT_FOUND + Lang.APARTMENT_BACKGROUND, Config.FONT_SIZE_MEDIUM));
+                        g2d.drawString(Lang.IMAGE_NOT_FOUND + Lang.APARTMENT_BACKGROUND, 50, 50);
                 }
 
                 float hoverProgress = getHoverProgress();
-                int restWidth = 200;
-                int restHeight = 70;
+                int restWidth = Config.BUTTON_WIDTH_REST;
+                int restHeight = Config.BUTTON_HEIGHT_REST;
                 int restX = (getWidth() - restWidth) / 2;
-                int restY = getHeight() - 120;
+                int restY = getHeight() - Config.BUTTON_MARGIN_REST;
 
                 g2d.setColor(new Color(0, 0, 0, 150));
                 g2d.fillRoundRect(restX, restY, restWidth, restHeight, 8, 8);
@@ -139,12 +147,12 @@ public class WindowManager {
                     g2d.drawRoundRect(restX, restY, restWidth, restHeight, 8, 8);
                 }
 
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("SansSerif", Font.BOLD, 20));
-                FontMetrics fm = g2d.getFontMetrics();
-                int restTextX = restX + (restWidth - fm.stringWidth("Rest")) / 2;
-                int restTextY = restY + (restHeight + fm.getAscent()) / 2 - 2;
-                g2d.drawString("Rest", restTextX, restTextY);
+                        g2d.setColor(Color.WHITE);
+                        g2d.setFont(FontManager.getFontForText(Lang.REST_BUTTON, Config.FONT_SIZE_LARGE, Font.BOLD));
+                        FontMetrics fm = g2d.getFontMetrics();
+                        int restTextX = restX + (restWidth - fm.stringWidth(Lang.REST_BUTTON)) / 2;
+                        int restTextY = restY + (restHeight + fm.getAscent()) / 2 - 2;
+                        g2d.drawString(Lang.REST_BUTTON, restTextX, restTextY);
             }
         };
 
@@ -163,7 +171,7 @@ public class WindowManager {
                     SwingUtilities.invokeLater(() -> {
                         try {
                             SoundPlayer soundPlayer = new SoundPlayer();
-                            soundPlayer.play("./assets/sfx/bubble-pop.wav");
+                            soundPlayer.play(Lang.BUBBLE_POP_SOUND);
                         } catch (Exception ex) {
                         }
 
@@ -219,7 +227,7 @@ public class WindowManager {
         });
 
         try {
-            Image cursorImage = ImageIO.read(new File("assets/ui/cone.png"));
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
             frame.setCursor(customCursor);
         } catch (IOException e) {
@@ -236,8 +244,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = 600;
-        int windowHeight = 400;
+        int windowWidth = Config.WINDOW_WIDTH_DEFAULT;
+        int windowHeight = Config.WINDOW_HEIGHT_DEFAULT;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
@@ -246,20 +254,23 @@ public class WindowManager {
 
         JPanel panel = new JPanel(new BorderLayout());
 
-        JLabel titleLabel = new JLabel("Bank", JLabel.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+                JLabel titleLabel = new JLabel(Lang.BANK_TITLE, JLabel.CENTER);
+                titleLabel.setFont(FontManager.getFontForText(Lang.BANK_TITLE, Config.FONT_SIZE_TITLE, Font.BOLD));
         panel.add(titleLabel, BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new GridLayout(3, 1, 10, 10));
         centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JButton depositButton = new JButton("Deposit");
-        JButton withdrawButton = new JButton("Withdraw");
-        JButton balanceButton = new JButton("Check Balance");
+        JButton depositButton = new JButton(Lang.DEPOSIT_BUTTON);
+        depositButton.setFont(FontManager.getFontForText(Lang.DEPOSIT_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton withdrawButton = new JButton(Lang.WITHDRAW_BUTTON);
+        withdrawButton.setFont(FontManager.getFontForText(Lang.WITHDRAW_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton balanceButton = new JButton(Lang.CHECK_BALANCE_BUTTON);
+        balanceButton.setFont(FontManager.getFontForText(Lang.CHECK_BALANCE_BUTTON, Config.FONT_SIZE_BUTTON));
 
-        depositButton.addActionListener(e -> showMessage("Deposit successful"));
-        withdrawButton.addActionListener(e -> showMessage("Withdraw successful"));
-        balanceButton.addActionListener(e -> showMessage("Balance: $1,000"));
+        depositButton.addActionListener(e -> showMessage(Lang.DEPOSIT_SUCCESS));
+        withdrawButton.addActionListener(e -> showMessage(Lang.WITHDRAW_SUCCESS));
+        balanceButton.addActionListener(e -> showMessage(Lang.BALANCE_AMOUNT));
 
         centerPanel.add(depositButton);
         centerPanel.add(withdrawButton);
@@ -288,7 +299,7 @@ public class WindowManager {
         });
 
         try {
-            Image cursorImage = ImageIO.read(new File("assets/ui/cone.png"));
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
             frame.setCursor(customCursor);
         } catch (IOException e) {
@@ -304,28 +315,32 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = 700;
-        int windowHeight = 500;
+        int windowWidth = Config.WINDOW_WIDTH_SHOP;
+        int windowHeight = Config.WINDOW_HEIGHT_SHOP;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new BorderLayout());
 
-        JLabel titleLabel = new JLabel("Shop", JLabel.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+                JLabel titleLabel = new JLabel(Lang.SHOP_TITLE, JLabel.CENTER);
+                titleLabel.setFont(FontManager.getFontForText(Lang.SHOP_TITLE, Config.FONT_SIZE_TITLE, Font.BOLD));
         panel.add(titleLabel, BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JButton foodButton = new JButton("Food ($50)");
-        JButton drinkButton = new JButton("Drink ($30)");
-        JButton medicineButton = new JButton("Medicine ($100)");
-        JButton closeButton = new JButton("Close");
+        JButton foodButton = new JButton(Lang.FOOD_BUTTON);
+        foodButton.setFont(FontManager.getFontForText(Lang.FOOD_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton drinkButton = new JButton(Lang.DRINK_BUTTON);
+        drinkButton.setFont(FontManager.getFontForText(Lang.DRINK_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton medicineButton = new JButton(Lang.MEDICINE_BUTTON);
+        medicineButton.setFont(FontManager.getFontForText(Lang.MEDICINE_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton closeButton = new JButton(Lang.CLOSE_BUTTON);
+        closeButton.setFont(FontManager.getFontForText(Lang.CLOSE_BUTTON, Config.FONT_SIZE_BUTTON));
 
-        foodButton.addActionListener(e -> showMessage("Food purchased"));
-        drinkButton.addActionListener(e -> showMessage("Drink purchased"));
-        medicineButton.addActionListener(e -> showMessage("Medicine purchased"));
+        foodButton.addActionListener(e -> showMessage(Lang.FOOD_PURCHASED));
+        drinkButton.addActionListener(e -> showMessage(Lang.DRINK_PURCHASED));
+        medicineButton.addActionListener(e -> showMessage(Lang.MEDICINE_PURCHASED));
         closeButton.addActionListener(e -> frame.dispose());
 
         centerPanel.add(foodButton);
@@ -336,7 +351,7 @@ public class WindowManager {
         panel.add(centerPanel, BorderLayout.CENTER);
 
         try {
-            Image cursorImage = ImageIO.read(new File("assets/ui/cone.png"));
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
             frame.setCursor(customCursor);
         } catch (IOException e) {
@@ -352,26 +367,29 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = 600;
-        int windowHeight = 400;
+        int windowWidth = Config.WINDOW_WIDTH_DEFAULT;
+        int windowHeight = Config.WINDOW_HEIGHT_DEFAULT;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new BorderLayout());
 
-        JLabel titleLabel = new JLabel("Hospital", JLabel.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+                JLabel titleLabel = new JLabel(Lang.HOSPITAL_TITLE, JLabel.CENTER);
+                titleLabel.setFont(FontManager.getFontForText(Lang.HOSPITAL_TITLE, Config.FONT_SIZE_TITLE, Font.BOLD));
         panel.add(titleLabel, BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new GridLayout(3, 1, 10, 10));
         centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JButton healButton = new JButton("Heal ($200)");
-        JButton checkButton = new JButton("Health Check");
-        JButton closeButton = new JButton("Close");
+        JButton healButton = new JButton(Lang.HEAL_BUTTON);
+        healButton.setFont(FontManager.getFontForText(Lang.HEAL_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton checkButton = new JButton(Lang.HEALTH_CHECK_BUTTON);
+        checkButton.setFont(FontManager.getFontForText(Lang.HEALTH_CHECK_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton closeButton = new JButton(Lang.CLOSE_BUTTON);
+        closeButton.setFont(FontManager.getFontForText(Lang.CLOSE_BUTTON, Config.FONT_SIZE_BUTTON));
 
-        healButton.addActionListener(e -> showMessage("Healing complete"));
-        checkButton.addActionListener(e -> showMessage("Health is good"));
+        healButton.addActionListener(e -> showMessage(Lang.HEALING_COMPLETE));
+        checkButton.addActionListener(e -> showMessage(Lang.HEALTH_GOOD));
         closeButton.addActionListener(e -> frame.dispose());
 
         centerPanel.add(healButton);
@@ -381,7 +399,7 @@ public class WindowManager {
         panel.add(centerPanel, BorderLayout.CENTER);
 
         try {
-            Image cursorImage = ImageIO.read(new File("assets/ui/cone.png"));
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
             frame.setCursor(customCursor);
         } catch (IOException e) {
@@ -397,24 +415,26 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = 600;
-        int windowHeight = 400;
+        int windowWidth = Config.WINDOW_WIDTH_DEFAULT;
+        int windowHeight = Config.WINDOW_HEIGHT_DEFAULT;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new BorderLayout());
 
-        JLabel titleLabel = new JLabel("Clock Tower", JLabel.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+                JLabel titleLabel = new JLabel(Lang.CLOCK_TITLE, JLabel.CENTER);
+                titleLabel.setFont(FontManager.getFontForText(Lang.CLOCK_TITLE, Config.FONT_SIZE_TITLE, Font.BOLD));
         panel.add(titleLabel, BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new GridLayout(2, 1, 10, 10));
         centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JButton timeButton = new JButton("Check Time");
-        JButton closeButton = new JButton("Close");
+        JButton timeButton = new JButton(Lang.CHECK_TIME_BUTTON);
+        timeButton.setFont(FontManager.getFontForText(Lang.CHECK_TIME_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton closeButton = new JButton(Lang.CLOSE_BUTTON);
+        closeButton.setFont(FontManager.getFontForText(Lang.CLOSE_BUTTON, Config.FONT_SIZE_BUTTON));
 
-        timeButton.addActionListener(e -> showMessage("Current time: " + java.time.LocalTime.now().toString()));
+        timeButton.addActionListener(e -> showMessage(Lang.CURRENT_TIME + java.time.LocalTime.now().toString()));
         closeButton.addActionListener(e -> frame.dispose());
 
         centerPanel.add(timeButton);
@@ -423,7 +443,7 @@ public class WindowManager {
         panel.add(centerPanel, BorderLayout.CENTER);
 
         try {
-            Image cursorImage = ImageIO.read(new File("assets/ui/cone.png"));
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
             frame.setCursor(customCursor);
         } catch (IOException e) {
@@ -439,21 +459,23 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = 400;
-        int windowHeight = 300;
+        int windowWidth = Config.WINDOW_WIDTH_SMALL;
+        int windowHeight = Config.WINDOW_HEIGHT_SMALL;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new BorderLayout());
-        JLabel label = new JLabel("Window: " + title, JLabel.CENTER);
+                JLabel label = new JLabel(Lang.WINDOW_PREFIX + title, JLabel.CENTER);
+                label.setFont(FontManager.getFontForText(Lang.WINDOW_PREFIX + title, Config.FONT_SIZE_MEDIUM));
         panel.add(label, BorderLayout.CENTER);
 
-        JButton closeButton = new JButton("Close");
+        JButton closeButton = new JButton(Lang.CLOSE_BUTTON);
+        closeButton.setFont(FontManager.getFontForText(Lang.CLOSE_BUTTON, Config.FONT_SIZE_BUTTON));
         closeButton.addActionListener(e -> frame.dispose());
         panel.add(closeButton, BorderLayout.SOUTH);
 
         try {
-            Image cursorImage = ImageIO.read(new File("assets/ui/cone.png"));
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
             frame.setCursor(customCursor);
         } catch (IOException e) {
@@ -465,8 +487,154 @@ public class WindowManager {
         return frame;
     }
 
+    private JFrame createCultureWindow(String title) {
+        JFrame frame = new JFrame(title);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        int windowWidth = Config.WINDOW_WIDTH_DEFAULT;
+        int windowHeight = Config.WINDOW_HEIGHT_DEFAULT;
+        frame.setSize(windowWidth, windowHeight);
+        frame.setLocationRelativeTo(null);
+        frame.setAlwaysOnTop(true);
+        frame.setResizable(false);
+        frame.setUndecorated(true);
+
+        JPanel panel = new JPanel(new BorderLayout());
+
+        JLabel titleLabel = new JLabel(Lang.CULTURE_TITLE, JLabel.CENTER);
+        titleLabel.setFont(FontManager.getFontForText(Lang.CULTURE_TITLE, Config.FONT_SIZE_TITLE, Font.BOLD));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new GridLayout(3, 1, 10, 10));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JButton prayButton = new JButton(Lang.PRAY_BUTTON);
+        prayButton.setFont(FontManager.getFontForText(Lang.PRAY_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton meditateButton = new JButton(Lang.MEDITATE_BUTTON);
+        meditateButton.setFont(FontManager.getFontForText(Lang.MEDITATE_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton blessButton = new JButton(Lang.BLESS_BUTTON);
+        blessButton.setFont(FontManager.getFontForText(Lang.BLESS_BUTTON, Config.FONT_SIZE_BUTTON));
+
+        prayButton.addActionListener(e -> showMessage(Lang.PRAY_SUCCESS));
+        meditateButton.addActionListener(e -> showMessage(Lang.MEDITATE_SUCCESS));
+        blessButton.addActionListener(e -> showMessage(Lang.BLESS_SUCCESS));
+
+        centerPanel.add(prayButton);
+        centerPanel.add(meditateButton);
+        centerPanel.add(blessButton);
+
+        panel.add(centerPanel, BorderLayout.CENTER);
+
+        frame.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) {
+                    frame.dispose();
+                }
+            }
+        });
+
+        frame.addWindowFocusListener(new java.awt.event.WindowFocusListener() {
+            @Override
+            public void windowGainedFocus(java.awt.event.WindowEvent e) {
+            }
+
+            @Override
+            public void windowLostFocus(java.awt.event.WindowEvent e) {
+                frame.dispose();
+            }
+        });
+
+        try {
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
+            Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
+            frame.setCursor(customCursor);
+        } catch (IOException e) {
+        }
+
+        frame.add(panel);
+        frame.setVisible(true);
+
+        return frame;
+    }
+
+    private JFrame createUniversityWindow(String title) {
+        JFrame frame = new JFrame(title);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        int windowWidth = Config.WINDOW_WIDTH_DEFAULT;
+        int windowHeight = Config.WINDOW_HEIGHT_DEFAULT;
+        frame.setSize(windowWidth, windowHeight);
+        frame.setLocationRelativeTo(null);
+        frame.setAlwaysOnTop(true);
+        frame.setResizable(false);
+        frame.setUndecorated(true);
+
+        JPanel panel = new JPanel(new BorderLayout());
+
+        JLabel titleLabel = new JLabel(Lang.UNIVERSITY_TITLE, JLabel.CENTER);
+        titleLabel.setFont(FontManager.getFontForText(Lang.UNIVERSITY_TITLE, Config.FONT_SIZE_TITLE, Font.BOLD));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new GridLayout(3, 1, 10, 10));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JButton studyButton = new JButton(Lang.STUDY_BUTTON);
+        studyButton.setFont(FontManager.getFontForText(Lang.STUDY_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton researchButton = new JButton(Lang.RESEARCH_BUTTON);
+        researchButton.setFont(FontManager.getFontForText(Lang.RESEARCH_BUTTON, Config.FONT_SIZE_BUTTON));
+        JButton examButton = new JButton(Lang.EXAM_BUTTON);
+        examButton.setFont(FontManager.getFontForText(Lang.EXAM_BUTTON, Config.FONT_SIZE_BUTTON));
+
+        studyButton.addActionListener(e -> showMessage(Lang.STUDY_SUCCESS));
+        researchButton.addActionListener(e -> showMessage(Lang.RESEARCH_SUCCESS));
+        examButton.addActionListener(e -> showMessage(Lang.EXAM_SUCCESS));
+
+        centerPanel.add(studyButton);
+        centerPanel.add(researchButton);
+        centerPanel.add(examButton);
+
+        panel.add(centerPanel, BorderLayout.CENTER);
+
+        frame.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) {
+                    frame.dispose();
+                }
+            }
+        });
+
+        frame.addWindowFocusListener(new java.awt.event.WindowFocusListener() {
+            @Override
+            public void windowGainedFocus(java.awt.event.WindowEvent e) {
+            }
+
+            @Override
+            public void windowLostFocus(java.awt.event.WindowEvent e) {
+                frame.dispose();
+            }
+        });
+
+        try {
+            Image cursorImage = ImageIO.read(new File(Lang.CURSOR_IMAGE));
+            Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, new Point(0, 0), "hand");
+            frame.setCursor(customCursor);
+        } catch (IOException e) {
+        }
+        frame.add(panel);
+        frame.setVisible(true);
+
+        return frame;
+    }
+
     private void showMessage(String message) {
-        JOptionPane.showMessageDialog(null, message, "Notification", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane optionPane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
+        optionPane.setFont(FontManager.getFontForText(message, Config.FONT_SIZE_MEDIUM));
+        
+        JDialog dialog = optionPane.createDialog(null, Lang.NOTIFICATION_TITLE);
+        dialog.setFont(FontManager.getFontForText(Lang.NOTIFICATION_TITLE, Config.FONT_SIZE_MEDIUM));
+        dialog.setVisible(true);
     }
 
     public void closeAllWindows() {

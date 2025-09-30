@@ -223,4 +223,26 @@ public class MapEditor extends JPanel {
             g.drawString("Points: " + roadPoints.size(), 10, 90);
         }
     }
+
+    public void rotateSelectedObject(int degrees) {
+        if (selected != null) {
+            selected.rotation += degrees;
+            repaint();
+        }
+    }
+
+    public void zoomIn() {
+        zoom *= 1.2;
+        repaint();
+    }
+
+    public void zoomOut() {
+        zoom /= 1.2;
+        repaint();
+    }
+
+    public void resetZoom() {
+        zoom = 1.0;
+        repaint();
+    }
 }

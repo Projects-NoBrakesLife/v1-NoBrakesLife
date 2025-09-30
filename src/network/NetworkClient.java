@@ -135,12 +135,15 @@ public class NetworkClient {
     
     private void showConnectionError() {
         javax.swing.SwingUtilities.invokeLater(() -> {
-            javax.swing.JOptionPane.showMessageDialog(null, 
+            javax.swing.JOptionPane optionPane = new javax.swing.JOptionPane(
                 "Server connection error\n\n" +
-
                 "Game will close in 3 seconds...", 
-                "Connection Error", 
                 javax.swing.JOptionPane.ERROR_MESSAGE);
+            optionPane.setFont(util.FontManager.getFontForText("Server connection error", 14));
+            
+            javax.swing.JDialog dialog = optionPane.createDialog(null, "Connection Error");
+            dialog.setFont(util.FontManager.getFontForText("Connection Error", 14));
+            dialog.setVisible(true);
             
             new javax.swing.Timer(3000, e -> {
                 System.exit(0);

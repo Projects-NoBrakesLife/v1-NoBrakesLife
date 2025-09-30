@@ -5,9 +5,6 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.util.List;
 import javax.swing.*;
 
 public class MapEditorUI extends JFrame {
@@ -40,7 +37,11 @@ public class MapEditorUI extends JFrame {
                 try {
                     mapEditor.addPng(fc.getSelectedFile());
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Error loading file: " + ex.getMessage());
+                    JOptionPane optionPane = new JOptionPane("Error loading file: " + ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+                    optionPane.setFont(util.FontManager.getFontForText("Error loading file", 12));
+                    JDialog dialog = optionPane.createDialog(this, "Error");
+                    dialog.setFont(util.FontManager.getFontForText("Error", 12));
+                    dialog.setVisible(true);
                 }
             }
         });
@@ -68,12 +69,32 @@ public class MapEditorUI extends JFrame {
         JButton clearOutputButton = new JButton("Clear Output");
         clearOutputButton.addActionListener(e -> outputArea.setText(""));
 
+        JButton rotateLeftButton = new JButton("Rotate Left");
+        rotateLeftButton.addActionListener(e -> mapEditor.rotateSelectedObject(-15));
+
+        JButton rotateRightButton = new JButton("Rotate Right");
+        rotateRightButton.addActionListener(e -> mapEditor.rotateSelectedObject(15));
+
+        JButton zoomInButton = new JButton("Zoom In");
+        zoomInButton.addActionListener(e -> mapEditor.zoomIn());
+
+        JButton zoomOutButton = new JButton("Zoom Out");
+        zoomOutButton.addActionListener(e -> mapEditor.zoomOut());
+
+        JButton resetZoomButton = new JButton("Reset Zoom");
+        resetZoomButton.addActionListener(e -> mapEditor.resetZoom());
+
         controlPanel.add(addPngButton);
         controlPanel.add(roadEditButton);
         controlPanel.add(showRoadsButton);
         controlPanel.add(exportObjectsButton);
         controlPanel.add(exportRoadsButton);
         controlPanel.add(clearOutputButton);
+        controlPanel.add(rotateLeftButton);
+        controlPanel.add(rotateRightButton);
+        controlPanel.add(zoomInButton);
+        controlPanel.add(zoomOutButton);
+        controlPanel.add(resetZoomButton);
 
         outputArea = new JTextArea(10, 50);
         outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -86,7 +107,7 @@ public class MapEditorUI extends JFrame {
         add(controlPanel, BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
 
-        JLabel statusLabel = new JLabel("Map Editor - Use mouse to edit objects, R for road edit mode");
+        JLabel statusLabel = new JLabel("Map Editor - Mouse: edit objects | R: road edit | Q/W: rotate | +/-: zoom | 0: reset zoom");
         add(statusLabel, BorderLayout.SOUTH);
     }
 
@@ -129,12 +150,56 @@ public class MapEditorUI extends JFrame {
                 copyToClipboard(code);
             }
         });
+
+        inputMap.put(KeyStroke.getKeyStroke("Q"), "rotateLeft");
+        actionMap.put("rotateLeft", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.rotateSelectedObject(-15);
+            }
+        });
+
+        inputMap.put(KeyStroke.getKeyStroke("W"), "rotateRight");
+        actionMap.put("rotateRight", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.rotateSelectedObject(15);
+            }
+        });
+
+        inputMap.put(KeyStroke.getKeyStroke("PLUS"), "zoomIn");
+        actionMap.put("zoomIn", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.zoomIn();
+            }
+        });
+
+        inputMap.put(KeyStroke.getKeyStroke("MINUS"), "zoomOut");
+        actionMap.put("zoomOut", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.zoomOut();
+            }
+        });
+
+        inputMap.put(KeyStroke.getKeyStroke("0"), "resetZoom");
+        actionMap.put("resetZoom", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mapEditor.resetZoom();
+            }
+        });
     }
 
     private void copyToClipboard(String text) {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(new StringSelection(text), null);
-        JOptionPane.showMessageDialog(this, "Code copied to clipboard!");
+        JOptionPane optionPane = new JOptionPane("Code copied to clipboard!", JOptionPane.INFORMATION_MESSAGE);
+        optionPane.setFont(util.FontManager.getFontForText("Code copied to clipboard!", 12));
+        JDialog dialog = optionPane.createDialog(this, "Success");
+        dialog.setFont(util.FontManager.getFontForText("Success", 12));
+        dialog.setVisible(true);
     }
 
     public static void main(String[] args) {
