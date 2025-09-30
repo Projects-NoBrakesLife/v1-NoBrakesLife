@@ -6,6 +6,8 @@ public class PlayerState {
     public enum Location {
         APARTMENT_SHITTY,
         BANK,
+        TECH,
+        JOB_OFFICE,
         CLOCK_TOWER,
         SHOP,
         HOSPITAL
