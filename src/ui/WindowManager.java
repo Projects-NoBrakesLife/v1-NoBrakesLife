@@ -8,7 +8,6 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import util.SoundPlayer;
-import core.Config;
 
 class CustomPanel extends JPanel {
     private boolean restHovered = false;
@@ -99,8 +98,8 @@ public class WindowManager {
         JFrame frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        int windowWidth = 1500;
-        int windowHeight = 800;
+        int windowWidth = 1280;
+        int windowHeight = 720;
         frame.setSize(windowWidth, windowHeight);
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
