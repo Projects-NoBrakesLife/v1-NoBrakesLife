@@ -1,13 +1,14 @@
 package ui;
 
+import core.Debug;
+import core.Lang;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import core.Config;
+import util.FontManager;
 
 public class CharacterSelection {
 
@@ -24,7 +25,7 @@ public class CharacterSelection {
         }
 
         if (characterFiles.isEmpty()) {
-            return "assets/players/Male-01.png";
+            return Lang.MALE_01;
         }
 
         JWindow loadingWindow = new JWindow(parentFrame);
@@ -36,20 +37,20 @@ public class CharacterSelection {
                 g2d.setColor(Color.BLACK);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
 
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("SansSerif", Font.BOLD, 24));
-                FontMetrics fm = g2d.getFontMetrics();
-                String text = "Loading Game...";
-                int x = (getWidth() - fm.stringWidth(text)) / 2;
-                int y = getHeight() / 2;
-                g2d.drawString(text, x, y);
+                        g2d.setColor(Color.WHITE);
+                        g2d.setFont(FontManager.getFontForText(Lang.LOADING_TEXT, 24, Font.BOLD));
+                        FontMetrics fm = g2d.getFontMetrics();
+                        String text = Lang.LOADING_TEXT;
+                        int x = (getWidth() - fm.stringWidth(text)) / 2;
+                        int y = getHeight() / 2;
+                        g2d.drawString(text, x, y);
             }
         };
         loadingWindow.add(loadingPanel);
         loadingWindow.setSize(parentFrame.getSize());
         loadingWindow.setLocation(parentFrame.getLocation());
 
-        JDialog dialog = new JDialog(parentFrame, "@v1-NoBrakesLife", true);
+        JDialog dialog = new JDialog(parentFrame, Lang.WINDOW_TITLE, true);
         dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         dialog.setUndecorated(true);
         dialog.setSize(parentFrame.getSize());
@@ -59,12 +60,12 @@ public class CharacterSelection {
 
         JPanel topPanel = new JPanel(new BorderLayout());
 
-        JLabel titleLabel = new JLabel("@v1 - No Brakes Life", JLabel.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
+        JLabel titleLabel = new JLabel(Lang.GAME_SUBTITLE, JLabel.CENTER);
+        titleLabel.setFont(FontManager.getFontForText(Lang.GAME_SUBTITLE, 36, Font.BOLD));
         topPanel.add(titleLabel, BorderLayout.CENTER);
 
-        JLabel subtitleLabel = new JLabel("Select Your Character", JLabel.CENTER);
-        subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        JLabel subtitleLabel = new JLabel(Lang.CHARACTER_SELECTION_TITLE, JLabel.CENTER);
+        subtitleLabel.setFont(FontManager.getFontForText(Lang.CHARACTER_SELECTION_TITLE, 18));
         subtitleLabel.setForeground(Color.GRAY);
         topPanel.add(subtitleLabel, BorderLayout.SOUTH);
 
@@ -121,7 +122,7 @@ public class CharacterSelection {
 
                 characterPanel.add(characterLabel);
             } catch (Exception e) {
-                System.err.println("Error loading character image: " + characterFile);
+                Debug.error(Lang.ERROR_LOADING_CHARACTER + characterFile, e);
             }
         }
 

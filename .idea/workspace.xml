@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="78c868ab-c629-429f-9104-b7942563c78a" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/Character.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/Character.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/Config.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/Config.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/GameObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/GameObject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/GamePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/GamePanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/PathFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/PathFinder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/PlayerState.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/PlayerState.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/network/NetworkClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/NetworkClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/CharacterSelection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/CharacterSelection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/MapEditor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/MapEditor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/MapEditorUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/MapEditorUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/WindowManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/WindowManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/util/SoundPlayer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/SoundPlayer.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="33PzV5JXKWZmOezQJuNSWEfiOTX" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.Dev.executor&quot;: &quot;Run&quot;,
+    &quot;Application.GameServer.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.MapEditorUI.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Play1.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Play2.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Server.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;v1/dev/uxui&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/uSeR/Documents/GitHub/v1-NoBrakesLife/assets/font&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\uSeR\Documents\GitHub\v1-NoBrakesLife\assets\font" />
+      <recent name="C:\Users\uSeR\Documents\GitHub\v1-NoBrakesLife\assets\ui" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Application.Play1">
+    <configuration name="Dev" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="ui.MapEditorUI" />
+      <module name="v1-NoBrakesLife" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Play1" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="Main" />
+      <module name="v1-NoBrakesLife" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Play2" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="Main" />
+      <module name="v1-NoBrakesLife" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Server" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="network.GameServer" />
+      <module name="v1-NoBrakesLife" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Application.Dev" />
+      <item itemvalue="Application.Play1" />
+      <item itemvalue="Application.Play2" />
+      <item itemvalue="Application.Server" />
+    </list>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="78c868ab-c629-429f-9104-b7942563c78a" name="Changes" comment="" />
+      <created>1759233516807</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1759233516807</updated>
+    </task>
+    <servers />
+  </component>
+</project>

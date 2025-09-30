@@ -7,7 +7,8 @@ public class NetworkMessage implements Serializable {
     public enum MessageType {
         PLAYER_JOIN,
         PLAYER_LEAVE,
-        PLAYER_MOVE
+        PLAYER_MOVE,
+        PLAYER_UPDATE
     }
     
     public MessageType type;
@@ -34,6 +35,14 @@ public class NetworkMessage implements Serializable {
     public static NetworkMessage createPlayerMove(String playerId, Point position) {
         NetworkMessage msg = new NetworkMessage(MessageType.PLAYER_MOVE, playerId);
         msg.position = position;
+        return msg;
+    }
+    
+    public static NetworkMessage createPlayerUpdate(String playerId, String playerName, Point position, String characterImage) {
+        NetworkMessage msg = new NetworkMessage(MessageType.PLAYER_UPDATE, playerId);
+        msg.playerName = playerName;
+        msg.position = position;
+        msg.characterImage = characterImage;
         return msg;
     }
 }
