@@ -101,6 +101,7 @@ public class Lang {
     public static final String CURSOR_IMAGE = "assets/ui/cone.png";
     public static final String UI_CLICK_SOUND = "./assets/sfx/UI_Click_Organic_mono.wav";
     public static final String BUBBLE_POP_SOUND = "./assets/sfx/bubble-pop.wav";
+    public static final String BACKGROUND_MUSIC = "./assets/sfx/NTTR-track8-master2.wav";
     public static final String BACKGROUND_IMAGE = "./assets/maps/background-iceland.png";
     public static final String UI_BOX_IMAGE = "./assets/ui/Box 1.png";
     

@@ -12,6 +12,7 @@ import network.NetworkClient;
 import network.OnlinePlayer;
 import ui.CharacterSelection;
 import ui.WindowManager;
+import util.BackgroundMusicPlayer;
 import util.BackgroundUtil;
 import util.FontManager;
 import util.SoundPlayer;
@@ -22,6 +23,7 @@ public class GamePanel extends JPanel {
     private java.util.List<GameObject> objects;
     private GameObject hoveredObj = null;
     private final SoundPlayer soundPlayer = new SoundPlayer();
+    private final BackgroundMusicPlayer backgroundMusicPlayer = new BackgroundMusicPlayer();
     private final WindowManager windowManager = new WindowManager();
     private boolean soundPlayed = false;
     private core.Character character;
@@ -60,10 +62,13 @@ public class GamePanel extends JPanel {
         networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, characterImagePath);
         networkClient.connect();
 
-        javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, e -> {
+        javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, event -> {
             updateOnlinePlayers();
         });
         networkTimer.start();
+
+        System.out.println("GamePanel: Starting background music...");
+        backgroundMusicPlayer.play();
 
         addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
