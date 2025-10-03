@@ -14,6 +14,9 @@ public class CharacterHUD {
     private BufferedImage healthIcon;
     private BufferedImage moneyIcon;
     private BufferedImage characterIcon;
+    private BufferedImage tokenIcon;
+    private BufferedImage tokenBackIcon;
+    private int playerNumber;
     private PlayerState playerState;
     private int x, y;
     private int mainCircleRadius;
@@ -23,10 +26,11 @@ public class CharacterHUD {
     private Color borderColor;
     private Color textColor;
     
-    public CharacterHUD(PlayerState playerState, int x, int y) {
+    public CharacterHUD(PlayerState playerState, int x, int y, int playerNumber) {
         this.playerState = playerState;
         this.x = x;
         this.y = y;
+        this.playerNumber = playerNumber;
         this.mainCircleRadius = 50;
         this.iconRadius = 20;
         this.hudFont = new Font("Arial", Font.BOLD, 9);
@@ -42,10 +46,24 @@ public class CharacterHUD {
             happinessIcon = ImageIO.read(new File("assets/ui/hud/Icon Happiness #6686.png"));
             healthIcon = ImageIO.read(new File("assets/ui/hud/Icon Health.png"));
             moneyIcon = ImageIO.read(new File("assets/ui/hud/Icon Money #6805.png"));
+            loadTokenIcon();
             loadCharacterIcon();
         } catch (IOException e) {
             System.out.println("Could not load HUD icons: " + e.getMessage());
             createFallbackIcons();
+        }
+    }
+    
+    private void loadTokenIcon() {
+        try {
+            String tokenFrontPath = "assets/ui/hud/Token P" + playerNumber + " Front.png";
+            String tokenBackPath = "assets/ui/hud/P" + playerNumber + " Back.png";
+            tokenIcon = ImageIO.read(new File(tokenFrontPath));
+            tokenBackIcon = ImageIO.read(new File(tokenBackPath));
+        } catch (IOException e) {
+            System.out.println("Could not load token icon: " + e.getMessage());
+            tokenIcon = null;
+            tokenBackIcon = null;
         }
     }
     
@@ -95,6 +113,7 @@ public class CharacterHUD {
         
         drawMainCharacterCircle(g2d);
         drawStatusIcons(g2d);
+        drawTokenIcon(g2d);
     }
     
     private void drawMainCharacterCircle(Graphics2D g2d) {
@@ -158,6 +177,22 @@ public class CharacterHUD {
     
     private int calculateMoneyProgress() {
         return Math.min(100, playerState.getMoney() / 10);
+    }
+    
+    private void drawTokenIcon(Graphics2D g2d) {
+        BufferedImage currentTokenIcon = isCurrentTurn ? tokenBackIcon : tokenIcon;
+        if (currentTokenIcon != null) {
+            int tokenSize = isCurrentTurn ? 30 : 20;
+            int tokenX = x - tokenSize/2;
+            int tokenY = y + mainCircleRadius + 8;
+            g2d.drawImage(currentTokenIcon, tokenX, tokenY, tokenSize, tokenSize, null);
+        }
+    }
+    
+    private boolean isCurrentTurn = false;
+    
+    public void setCurrentTurn(boolean isCurrentTurn) {
+        this.isCurrentTurn = isCurrentTurn;
     }
     
     public void setPosition(int x, int y) {

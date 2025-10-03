@@ -5,17 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="78c868ab-c629-429f-9104-b7942563c78a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/assets/ui/hud/Icon Education #125.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/ui/hud/Color Circle TL.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/Character.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/Character.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/Config.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/Config.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/GamePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/GamePanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/Lang.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/Lang.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/PlayerState.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/PlayerState.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/network/GameServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/GameServer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/network/NetworkClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/NetworkClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/OnlinePlayerHUD.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/OnlinePlayerHUD.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
