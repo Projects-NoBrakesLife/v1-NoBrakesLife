@@ -135,11 +135,19 @@ public class FontManager {
     }
     
     public static Font getFontForText(String text, int size) {
-        return getThaiFont(size);
+        if (isThaiText(text)) {
+            return getThaiFont(size);
+        } else {
+            return getEnglishFont(size);
+        }
     }
     
     public static Font getFontForText(String text, int size, int style) {
-        return getThaiFont(size, style);
+        if (isThaiText(text)) {
+            return getThaiFont(size, style);
+        } else {
+            return getEnglishFont(size, style);
+        }
     }
     
     public static Font getGameFont(int size) {
@@ -163,5 +171,21 @@ public class FontManager {
         englishFontLoaded = false;
         thaiFont = null;
         englishFont = null;
+    }
+    
+    public static Font getSmartThaiFont(int size) {
+        Font arabicaFont = loadThaiFont();
+        if (arabicaFont != null) {
+            return arabicaFont.deriveFont((float) size);
+        }
+        return new Font("Tahoma", Font.PLAIN, size);
+    }
+    
+    public static Font getSmartThaiFont(int size, int style) {
+        Font arabicaFont = loadThaiFont();
+        if (arabicaFont != null) {
+            return arabicaFont.deriveFont(style, (float) size);
+        }
+        return new Font("Tahoma", style, size);
     }
 }

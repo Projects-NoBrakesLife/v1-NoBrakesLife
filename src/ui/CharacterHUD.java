@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+import util.FontManager;
 
 public class CharacterHUD {
     private BufferedImage educationIcon;
@@ -33,7 +34,7 @@ public class CharacterHUD {
         this.playerNumber = 0;
         this.mainCircleRadius = 50;
         this.iconRadius = 20;
-        this.hudFont = new Font("Arial", Font.BOLD, 9);
+        this.hudFont = FontManager.getSmartThaiFont(9, Font.BOLD);
         this.backgroundColor = new Color(0, 0, 0, 120);
         this.borderColor = new Color(255, 255, 255, 180);
         this.textColor = Color.WHITE;
@@ -55,6 +56,13 @@ public class CharacterHUD {
     }
     
     private void loadTokenIcon() {
+        if (playerNumber <= 0) {
+            System.out.println("Player number ไม่ถูกต้อง: " + playerNumber + " - ข้ามการโหลด Token");
+            tokenIcon = null;
+            tokenBackIcon = null;
+            return;
+        }
+        
         try {
             String tokenFrontPath = "assets/ui/hud/Token P" + playerNumber + " Front.png";
             String tokenBackPath = "assets/ui/hud/P" + playerNumber + " Back.png";
