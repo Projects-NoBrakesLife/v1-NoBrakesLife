@@ -66,8 +66,9 @@ public class OnlinePlayerHUD {
             String tokenBackPath = "assets/ui/hud/P" + playerNumber + " Back.png";
             tokenIcon = ImageIO.read(new File(tokenFrontPath));
             tokenBackIcon = ImageIO.read(new File(tokenBackPath));
+            System.out.println("โหลด Token สำหรับ " + playerId + ": P" + playerNumber);
         } catch (IOException e) {
-            System.out.println("Could not load token icon for " + playerId + ": " + e.getMessage());
+            System.out.println("ไม่สามารถโหลด Token สำหรับ " + playerId + " (P" + playerNumber + "): " + e.getMessage());
             tokenIcon = null;
             tokenBackIcon = null;
         }

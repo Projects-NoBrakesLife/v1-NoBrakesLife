@@ -30,7 +30,7 @@ public class OnlinePlayerHUDManager {
         
         Point position = calculatePosition(onlineHUDs.size());
         boolean isRightSide = (onlineHUDs.size() == 0 || onlineHUDs.size() == 2);
-        int playerNumber = onlineHUDs.size() + 1;
+        int playerNumber = onlineHUDs.size() + 2;
         OnlinePlayerHUD hud = new OnlinePlayerHUD(playerId, playerState, position.x, position.y, isRightSide, playerNumber);
         onlineHUDs.put(playerId, hud);
         playerStates.put(playerId, playerState);
@@ -93,7 +93,7 @@ public class OnlinePlayerHUDManager {
             Point newPosition = calculatePosition(index);
             boolean isRightSide = (index == 0 || index == 2);
             hud.setPosition(newPosition.x, newPosition.y);
-            hud.setPlayerNumber(index + 1);
+            hud.setPlayerNumber(index + 2);
             index++;
         }
     }
