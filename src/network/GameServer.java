@@ -23,6 +23,10 @@ public class GameServer extends JFrame {
     private JLabel waitingLabel;
     private boolean isRunning = false;
     private boolean gameStarted = false;
+    private String currentTurnPlayer = null;
+    private java.util.List<String> playerTurnOrder = new java.util.ArrayList<>();
+    private int nextPlayerNumber = 1;
+    private java.util.Map<String, String> playerIdToDisplayId = new java.util.HashMap<>();
     
     public GameServer() {
         setTitle("Game Server - Debug");
@@ -225,6 +229,36 @@ public class GameServer extends JFrame {
     
     private OnlineDataManager dataManager = new OnlineDataManagerImpl();
     
+    private void initializeTurnSystem() {
+        playerTurnOrder.clear();
+        playerTurnOrder.addAll(onlinePlayers.keySet());
+        java.util.Collections.sort(playerTurnOrder);
+        
+        if (!playerTurnOrder.isEmpty()) {
+            currentTurnPlayer = playerTurnOrder.get(0);
+            log("Turn system initialized. First turn: " + currentTurnPlayer);
+            broadcastTurnChange();
+        }
+    }
+    
+    private void nextTurn() {
+        if (playerTurnOrder.isEmpty()) return;
+        
+        int currentIndex = playerTurnOrder.indexOf(currentTurnPlayer);
+        int nextIndex = (currentIndex + 1) % playerTurnOrder.size();
+        currentTurnPlayer = playerTurnOrder.get(nextIndex);
+        
+        log("Turn changed to: " + currentTurnPlayer);
+        broadcastTurnChange();
+    }
+    
+    private void broadcastTurnChange() {
+        if (currentTurnPlayer != null) {
+            NetworkMessage turnMsg = NetworkMessage.createTurnChange(currentTurnPlayer);
+            broadcastMessage(turnMsg, null);
+        }
+    }
+    
     private void handleMessage(NetworkMessage msg, Socket sender, ObjectOutputStream senderOut) {
         if (msg == null || msg.playerData == null) {
             log("Received null message or playerData");
@@ -247,6 +281,10 @@ public class GameServer extends JFrame {
                         broadcastMessage(msg, sender);
                         updatePlayerCount();
                         updatePlayerList();
+                        
+                        if (currentTurnPlayer == null) {
+                            initializeTurnSystem();
+                        }
                     } else {
                         log("Player " + msg.playerData.playerId + " already exists, updating data");
                         OnlinePlayer existingPlayer = onlinePlayers.get(msg.playerData.playerId);
@@ -310,9 +348,24 @@ public class GameServer extends JFrame {
             case PLAYER_LEAVE:
                 onlinePlayers.remove(msg.playerData.playerId);
                 clientConnections.remove(sender);
+                playerTurnOrder.remove(msg.playerData.playerId);
+                if (currentTurnPlayer != null && currentTurnPlayer.equals(msg.playerData.playerId)) {
+                    nextTurn();
+                }
                 log("Player left: " + msg.playerData.playerId);
                 broadcastMessage(msg, sender);
                 updatePlayerCount();
+                break;
+                
+            case TURN_COMPLETE:
+                if (currentTurnPlayer != null && currentTurnPlayer.equals(msg.playerData.playerId)) {
+                    log("Player " + msg.playerData.playerId + " completed their turn");
+                    nextTurn();
+                }
+                break;
+                
+            case TURN_CHANGE:
+                log("Turn change message received (server initiated)");
                 break;
         }
     }
