@@ -16,7 +16,7 @@ public class CharacterHUD {
     private BufferedImage characterIcon;
     private BufferedImage tokenIcon;
     private BufferedImage tokenBackIcon;
-    private int playerNumber;
+    private int playerNumber = 0;
     private PlayerState playerState;
     private int x, y;
     private int mainCircleRadius;
@@ -26,11 +26,11 @@ public class CharacterHUD {
     private Color borderColor;
     private Color textColor;
     
-    public CharacterHUD(PlayerState playerState, int x, int y, int playerNumber) {
+    public CharacterHUD(PlayerState playerState, int x, int y) {
         this.playerState = playerState;
         this.x = x;
         this.y = y;
-        this.playerNumber = playerNumber;
+        this.playerNumber = 0;
         this.mainCircleRadius = 50;
         this.iconRadius = 20;
         this.hudFont = new Font("Arial", Font.BOLD, 9);
@@ -190,6 +190,11 @@ public class CharacterHUD {
     }
     
     private boolean isCurrentTurn = false;
+    
+    public void setPlayerNumber(int playerNumber) {
+        this.playerNumber = playerNumber;
+        loadTokenIcon();
+    }
     
     public void setCurrentTurn(boolean isCurrentTurn) {
         this.isCurrentTurn = isCurrentTurn;
