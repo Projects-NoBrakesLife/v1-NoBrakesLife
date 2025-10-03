@@ -18,7 +18,7 @@ public class Config {
     public static final int UI_OFFSET_Y = 50;
     
     // การตั้งค่าเกม
-    public static final int MIN_PLAYERS_TO_START = 3;
+    public static final int MIN_PLAYERS_TO_START = 2;
 
     // ตำแหน่งของอาคารต่างๆ
     public static final Point APARTMENT_POINT = new Point(779, 250);
