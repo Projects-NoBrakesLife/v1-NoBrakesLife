@@ -40,6 +40,10 @@ public class GamePanel extends JPanel {
     private PlayerState.Location targetLocation;
     private GameObject targetObject;
     private PathFinder pathFinder;
+    private ui.CharacterHUD characterHUD;
+    private ui.OnlinePlayerHUDManager onlineHUDManager;
+    private boolean waitingForPlayers = true;
+    private javax.swing.Timer waitingTimer;
 
     public GamePanel() {
         background = new ImageIcon(Lang.BACKGROUND_IMAGE).getImage();
@@ -54,17 +58,11 @@ public class GamePanel extends JPanel {
 
         character = new core.Character(Config.APARTMENT_POINT);
         playerState = new PlayerState();
-
-        String playerId = "player" + System.currentTimeMillis();
         String characterImagePath = character.getImagePath();
-        networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, characterImagePath);
-        networkClient.connect();
-
-        javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, e -> {
-            updateOnlinePlayers();
-            syncPlayerState();
-        });
-        networkTimer.start();
+        playerState.setCharacterImagePath(characterImagePath);
+        characterHUD = new ui.CharacterHUD(playerState, 80, 100);
+        onlineHUDManager = new ui.OnlinePlayerHUDManager(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
+        networkClient = null;
 
         addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
@@ -107,6 +105,11 @@ public class GamePanel extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                if (!isMyTurn()) {
+                    Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
+                    return;
+                }
+                
                 if (e.isControlDown()) {
                     String pointCode = "new Point(" + e.getX() + ", " + e.getY() + ")";
                     java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
@@ -158,9 +161,34 @@ public class GamePanel extends JPanel {
 
     public void selectCharacter() {
         String selectedImage = CharacterSelection.showCharacterSelection(parentFrame);
-        character = new core.Character(character.getPosition(), selectedImage);
-        networkClient.sendPlayerUpdate();
-        Debug.log(Lang.CHARACTER_SELECTED + selectedImage);
+        if (selectedImage != null && !selectedImage.isEmpty()) {
+            character = new core.Character(character.getPosition(), selectedImage);
+            playerState.setCharacterImagePath(selectedImage);
+            
+            String playerId = "player" + System.currentTimeMillis();
+            networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, selectedImage);
+            networkClient.connect();
+            
+            javax.swing.Timer initialUpdateTimer = new javax.swing.Timer(1000, e -> {
+                networkClient.sendPlayerUpdate();
+                ((javax.swing.Timer) e.getSource()).stop();
+            });
+            initialUpdateTimer.start();
+
+            javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, e -> {
+                updateOnlinePlayers();
+                syncPlayerState();
+                checkPlayerCount();
+            });
+            networkTimer.start();
+            
+            waitingTimer = new javax.swing.Timer(1000, e -> {
+                checkPlayerCount();
+            });
+            waitingTimer.start();
+            
+            Debug.log(Lang.CHARACTER_SELECTED + selectedImage);
+        }
     }
 
     @Override
@@ -195,12 +223,38 @@ public class GamePanel extends JPanel {
             g.drawString(hoveredObj.name, tx, ty);
         }
 
-        if (character != null) {
+        if (character != null && !waitingForPlayers) {
             character.draw((Graphics2D) g);
         }
 
-        for (core.Character onlineChar : onlineCharacters.values()) {
-            onlineChar.draw((Graphics2D) g);
+        if (!waitingForPlayers) {
+            for (core.Character onlineChar : onlineCharacters.values()) {
+                onlineChar.draw((Graphics2D) g);
+            }
+        }
+
+        if (characterHUD != null) {
+            characterHUD.draw((Graphics2D) g);
+        }
+        
+        if (onlineHUDManager != null) {
+            onlineHUDManager.drawAll((Graphics2D) g);
+        }
+        
+        drawTurnIndicator((Graphics2D) g);
+
+        if (waitingForPlayers) {
+            g.setColor(new Color(0, 0, 0, 150));
+            g.fillRect(0, 0, Config.GAME_WIDTH, Config.GAME_HEIGHT);
+            
+            g.setColor(Color.WHITE);
+            g.setFont(FontManager.getFontForText("รอผู้เล่นอื่น...", 24, Font.BOLD));
+            FontMetrics fm = g.getFontMetrics();
+            String waitingText = "รอผู้เล่นอื่น... (" + (1 + onlineCharacters.size()) + "/4)";
+            int textWidth = fm.stringWidth(waitingText);
+            int textX = (Config.GAME_WIDTH - textWidth) / 2;
+            int textY = Config.GAME_HEIGHT / 2;
+            g.drawString(waitingText, textX, textY);
         }
 
         g.setColor(Color.GRAY);
@@ -211,16 +265,21 @@ public class GamePanel extends JPanel {
             g.drawLine(p1.x, p1.y, p2.x, p2.y);
         }
 
-        g.setColor(Color.CYAN);
+       /*  g.setColor(Color.CYAN);
         g.setFont(FontManager.getFontForText(Lang.CLICK_BUILDINGS_HINT, 14, Font.BOLD));
         g.drawString(Lang.CLICK_BUILDINGS_HINT, 10, Config.GAME_HEIGHT - 50);
         g.setFont(FontManager.getFontForText(Lang.CURRENT_LOCATION + playerState.getCurrentLocation(), 14, Font.BOLD));
         g.drawString(Lang.CURRENT_LOCATION + playerState.getCurrentLocation(), 10, Config.GAME_HEIGHT - 30);
         g.setFont(FontManager.getFontForText(Lang.MOUSE_POSITION + mousePosition.x + ", " + mousePosition.y, 14, Font.BOLD));
-        g.drawString(Lang.MOUSE_POSITION + mousePosition.x + ", " + mousePosition.y, 10, Config.GAME_HEIGHT - 10);
+        g.drawString(Lang.MOUSE_POSITION + mousePosition.x + ", " + mousePosition.y, 10, Config.GAME_HEIGHT - 10); */
     }
 
     private void showObjectWindow(GameObject obj) {
+        if (!isMyTurn()) {
+            Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
+            return;
+        }
+        
         if (obj.name.equals(Lang.APARTMENT_NAME)) {
             moveToLocation(PlayerState.Location.APARTMENT_SHITTY, obj);
         } else if (obj.name.equals(Lang.BANK_NAME)) {
@@ -237,6 +296,11 @@ public class GamePanel extends JPanel {
     }
 
     private void moveToLocation(PlayerState.Location targetLocation, GameObject obj) {
+        if (!isMyTurn()) {
+            Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
+            return;
+        }
+        
         PlayerState.Location currentLocation = playerState.getCurrentLocation();
 
         if (currentLocation == targetLocation) {
@@ -268,6 +332,11 @@ public class GamePanel extends JPanel {
     }
 
     private void startMovement(java.util.List<Point> path, PlayerState.Location targetLocation, GameObject obj) {
+        if (!isMyTurn()) {
+            Debug.log("Not your turn! Current turn: " + currentTurnPlayer);
+            return;
+        }
+        
         this.currentPath = path;
         this.targetLocation = targetLocation;
         this.targetObject = obj;
@@ -279,10 +348,21 @@ public class GamePanel extends JPanel {
         moveTimer = new javax.swing.Timer(Config.MOVEMENT_TIMER_INTERVAL, e -> {
             if (currentPathIndex < currentPath.size()) {
                 Point targetPoint = currentPath.get(currentPathIndex);
-                character.setPosition(targetPoint);
-                playerState.setCurrentPosition(targetPoint);
-                networkClient.sendPlayerMove(targetPoint);
-                networkClient.sendPlayerLocationChange(playerState.getCurrentLocation());
+                Point currentPos = character.getPosition();
+                
+                if (!targetPoint.equals(currentPos)) {
+                    character.setPosition(targetPoint);
+                    playerState.setCurrentPosition(targetPoint);
+                    
+                    if (networkClient != null) {
+                        networkClient.sendPlayerMove(targetPoint);
+                    }
+                }
+                
+                if (networkClient != null) {
+                    networkClient.sendPlayerLocationChange(playerState.getCurrentLocation());
+                }
+                
                 currentPathIndex++;
                 repaint();
             } else {
@@ -299,9 +379,18 @@ public class GamePanel extends JPanel {
         Debug.log(Lang.ARRIVED_AT + targetLocation);
         playerState.printStatus();
         showWindowForLocation(targetLocation);
+        
+        if (isTurnBasedMode) {
+            nextTurn();
+        }
     }
 
     private void showWindowForLocation(PlayerState.Location location) {
+        if (!isMyTurn()) {
+            Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
+            return;
+        }
+        
         if (location == PlayerState.Location.APARTMENT_SHITTY) {
             windowManager.showWindow(Lang.APARTMENT_WINDOW, Lang.APARTMENT_TITLE);
         } else if (location == PlayerState.Location.BANK) {
@@ -320,47 +409,212 @@ public class GamePanel extends JPanel {
     private void updateCharacterPosition(PlayerState.Location location) {
         Point position = locationPoints.get(location);
         if (position != null) {
-            character.setPosition(position);
-            playerState.setCurrentPosition(position);
+            Point currentPos = character.getPosition();
+            if (!position.equals(currentPos)) {
+                character.setPosition(position);
+                playerState.setCurrentPosition(position);
+            }
         }
     }
 
+    private Map<String, Point> lastKnownPositions = new HashMap<>();
+    private Map<String, Long> lastUpdateTimes = new HashMap<>();
+    private long lastPositionUpdate = 0;
+    private static final long POSITION_UPDATE_INTERVAL = 2000;
+    private static final long INDIVIDUAL_UPDATE_INTERVAL = 1500;
+    
+    private String currentTurnPlayer = null;
+    private boolean isTurnBasedMode = true;
+    
+    private network.OnlineDataManager dataManager = new network.OnlineDataManagerImpl();
+    
+    private void initializeTurnSystem() {
+        if (networkClient != null) {
+            java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
+            
+            String myPlayerId = networkClient.getMyPlayerData().playerId;
+            allPlayerIds.add(myPlayerId);
+            
+            for (String playerId : networkClient.getOnlinePlayers().keySet()) {
+                if (!allPlayerIds.contains(playerId)) {
+                    allPlayerIds.add(playerId);
+                }
+            }
+            
+            if (allPlayerIds.size() > 0) {
+                currentTurnPlayer = allPlayerIds.get(0);
+                Debug.log("Turn system initialized. First turn: " + currentTurnPlayer + " (my ID: " + myPlayerId + ")");
+                
+                if (onlineHUDManager != null) {
+                    onlineHUDManager.updateTurn(currentTurnPlayer);
+                }
+            }
+        }
+    }
+    
+    private void nextTurn() {
+        if (networkClient != null) {
+            java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
+            
+            String myPlayerId = networkClient.getMyPlayerData().playerId;
+            allPlayerIds.add(myPlayerId);
+            
+            for (String playerId : networkClient.getOnlinePlayers().keySet()) {
+                if (!allPlayerIds.contains(playerId)) {
+                    allPlayerIds.add(playerId);
+                }
+            }
+            
+            if (allPlayerIds.size() > 1) {
+                int currentIndex = allPlayerIds.indexOf(currentTurnPlayer);
+                int nextIndex = (currentIndex + 1) % allPlayerIds.size();
+                currentTurnPlayer = allPlayerIds.get(nextIndex);
+                Debug.log("Next turn: " + currentTurnPlayer + " (my ID: " + myPlayerId + ")");
+                
+                if (onlineHUDManager != null) {
+                    onlineHUDManager.updateTurn(currentTurnPlayer);
+                }
+            }
+        }
+    }
+    
+    private boolean isMyTurn() {
+        if (!isTurnBasedMode) return true;
+        if (networkClient == null) return true;
+        if (currentTurnPlayer == null) return true;
+        
+        String myPlayerId = networkClient.getMyPlayerData().playerId;
+        boolean isMyTurn = currentTurnPlayer.equals(myPlayerId);
+        Debug.log("Checking turn: current=" + currentTurnPlayer + ", my=" + myPlayerId + ", isMyTurn=" + isMyTurn);
+        return isMyTurn;
+    }
+    
     private void updateOnlinePlayers() {
+        if (networkClient == null) return;
         Map<String, OnlinePlayer> players = networkClient.getOnlinePlayers();
 
         Set<String> currentPlayerIds = new HashSet<>(players.keySet());
         Set<String> characterIds = new HashSet<>(onlineCharacters.keySet());
 
+        long currentTime = System.currentTimeMillis();
+        boolean shouldUpdate = (currentTime - lastPositionUpdate) > POSITION_UPDATE_INTERVAL;
+
+        if (shouldUpdate) {
+            Debug.log("Updating online players. Current: " + currentPlayerIds.size() + ", Characters: " + characterIds.size());
+        }
+
         for (String playerId : currentPlayerIds) {
             OnlinePlayer player = players.get(playerId);
+            if (player == null) {
+                continue;
+            }
+            
             if (!onlineCharacters.containsKey(playerId)) {
-                onlineCharacters.put(playerId, new core.Character(player.getPosition(), player.getCharacterImage()));
-                Debug.log(Lang.ONLINE_CHARACTER_CREATED + playerId + Lang.ONLINE_CHARACTER_WITH + player.getCharacterImage());
+                Point startPosition = new Point(779, 250);
+                onlineCharacters.put(playerId, new core.Character(startPosition, player.getCharacterImage()));
+                lastKnownPositions.put(playerId, startPosition);
+                lastUpdateTimes.put(playerId, currentTime);
+                Debug.log("Created new character for " + playerId + " at start position " + startPosition + " with image: " + player.getCharacterImage());
+                
+                if (player.getCharacterImage() != null && !player.getCharacterImage().isEmpty()) {
+                    PlayerState playerState = new PlayerState();
+                    playerState.setPlayerName(player.getPlayerName());
+                    playerState.setCharacterImagePath(player.getCharacterImage());
+                    playerState.setCurrentPosition(startPosition);
+                    playerState.setMoney(player.getMoney());
+                    playerState.setHealth(player.getHealth());
+                    playerState.setEnergy(player.getEnergy());
+                    onlineHUDManager.addPlayer(playerId, playerState);
+                    Debug.log("Added HUD for player: " + playerId);
+                }
             } else {
                 core.Character existingChar = onlineCharacters.get(playerId);
-                existingChar.setPosition(player.getPosition());
-                existingChar.updateImage(player.getCharacterImage());
+                if (existingChar != null) {
+                    Point currentPos = existingChar.getPosition();
+                    Point newPos = player.getPosition();
+                    Point lastKnownPos = lastKnownPositions.get(playerId);
+                    Long lastUpdateTime = lastUpdateTimes.get(playerId);
+                    
+                    boolean shouldUpdateThisPlayer = (lastUpdateTime == null || (currentTime - lastUpdateTime) > INDIVIDUAL_UPDATE_INTERVAL);
+                    boolean positionChanged = !newPos.equals(currentPos);
+                    
+                    if (shouldUpdateThisPlayer && positionChanged) {
+                        existingChar.setPosition(newPos);
+                        lastKnownPositions.put(playerId, newPos);
+                        lastUpdateTimes.put(playerId, currentTime);
+                        lastPositionUpdate = currentTime;
+                        Debug.log("Updated position for " + playerId + " from " + currentPos + " to " + newPos + " (from server)");
+                    }
+                    
+                    if (player.getCharacterImage() != null && !player.getCharacterImage().isEmpty()) {
+                        existingChar.updateImage(player.getCharacterImage());
+                        onlineHUDManager.updatePlayer(playerId, player);
+                    }
+                }
             }
         }
 
         for (String characterId : characterIds) {
             if (!currentPlayerIds.contains(characterId)) {
                 onlineCharacters.remove(characterId);
-                Debug.log(Lang.ONLINE_CHARACTER_REMOVED + characterId);
+                lastKnownPositions.remove(characterId);
+                lastUpdateTimes.remove(characterId);
+                onlineHUDManager.removePlayer(characterId);
+                Debug.log("Removed character: " + characterId);
             }
         }
 
-        repaint();
+        if (shouldUpdate) {
+            Debug.log("Final character count: " + onlineCharacters.size());
+            repaint();
+        }
+        
+        if (currentTurnPlayer == null && onlineCharacters.size() > 0) {
+            initializeTurnSystem();
+        }
     }
 
+    
     private void syncPlayerState() {
-        if (networkClient.isConnected()) {
-            networkClient.sendPlayerStatsUpdate(
-                playerState.getMoney(),
-                playerState.getHealth(),
-                playerState.getEnergy()
-            );
+        if (networkClient != null && networkClient.isConnected()) {
+            if (dataManager.shouldUpdateStats("localPlayer", playerState.getMoney(), playerState.getHealth(), playerState.getEnergy())) {
+                networkClient.sendPlayerStatsUpdate(playerState.getMoney(), playerState.getHealth(), playerState.getEnergy());
+                dataManager.updatePlayerStats("localPlayer", playerState.getMoney(), playerState.getHealth(), playerState.getEnergy());
+                Debug.log("Stats updated: Money=" + playerState.getMoney() + ", Health=" + playerState.getHealth() + ", Energy=" + playerState.getEnergy());
+            }
         }
+        if (characterHUD != null) {
+            characterHUD.updatePlayerState(playerState);
+        }
+    }
+    
+    private void drawTurnIndicator(Graphics2D g2d) {
+        if (isTurnBasedMode && currentTurnPlayer != null) {
+            String turnText = "รอบ: " + getPlayerNameById(currentTurnPlayer);
+            if (isMyTurn()) {
+                turnText += " (คุณ)";
+            } else {
+                turnText += " (รอ)";
+            }
+            
+            g2d.setColor(new Color(0, 0, 0, 180));
+            g2d.fillRoundRect(10, 10, 300, 30, 5, 5);
+            
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(FontManager.getFontForText("รอบ", 14, Font.BOLD));
+            g2d.drawString(turnText, 20, 30);
+        }
+    }
+    
+    private String getPlayerNameById(String playerId) {
+        if (networkClient != null) {
+            Map<String, OnlinePlayer> players = networkClient.getOnlinePlayers();
+            OnlinePlayer player = players.get(playerId);
+            if (player != null) {
+                return player.getPlayerName();
+            }
+        }
+        return "ผู้เล่น";
     }
 
     public void mousePressed(java.awt.event.MouseEvent e) {
@@ -379,5 +633,78 @@ public class GamePanel extends JPanel {
 
     public void setParentFrame(JFrame frame) {
         this.parentFrame = frame;
+    }
+    
+    private Point findSafePosition(Point originalPosition) {
+        Point safePosition = new Point(originalPosition);
+        int minDistance = 200;
+        int maxAttempts = 1;
+        int attempt = 0;
+        
+        Debug.log("Finding safe position for: " + originalPosition);
+        
+        while (attempt < maxAttempts) {
+            boolean collision = false;
+            
+            for (core.Character existingChar : onlineCharacters.values()) {
+                Point existingPos = existingChar.getPosition();
+                double distance = safePosition.distance(existingPos);
+                
+                if (distance < minDistance) {
+                    collision = true;
+                    double angle = Math.random() * 2 * Math.PI;
+                    int offsetX = (int)(minDistance * Math.cos(angle));
+                    int offsetY = (int)(minDistance * Math.sin(angle));
+                    safePosition.x = existingPos.x + offsetX;
+                    safePosition.y = existingPos.y + offsetY;
+                    Debug.log("Collision detected, adjusting position to: " + safePosition);
+                    break;
+                }
+            }
+            
+            if (character != null) {
+                Point charPos = character.getPosition();
+                double distance = safePosition.distance(charPos);
+                
+                if (distance < minDistance) {
+                    collision = true;
+                    double angle = Math.random() * 2 * Math.PI;
+                    int offsetX = (int)(minDistance * Math.cos(angle));
+                    int offsetY = (int)(minDistance * Math.sin(angle));
+                    safePosition.x = charPos.x + offsetX;
+                    safePosition.y = charPos.y + offsetY;
+                    Debug.log("Collision with main character, adjusting position to: " + safePosition);
+                }
+            }
+            
+            if (!collision) break;
+            
+            attempt++;
+        }
+        
+        if (safePosition.x < 300) safePosition.x = 300;
+        if (safePosition.y < 300) safePosition.y = 300;
+        if (safePosition.x > Config.GAME_WIDTH - 300) safePosition.x = Config.GAME_WIDTH - 300;
+        if (safePosition.y > Config.GAME_HEIGHT - 300) safePosition.y = Config.GAME_HEIGHT - 300;
+        
+        Debug.log("Final safe position: " + safePosition);
+        return safePosition;
+    }
+    
+    private void checkPlayerCount() {
+        if (networkClient == null) return;
+        
+        int totalPlayers = 1 + onlineCharacters.size();
+        
+        if (totalPlayers >= Config.MIN_PLAYERS_TO_START && waitingForPlayers) {
+            waitingForPlayers = false;
+            if (waitingTimer != null) {
+                waitingTimer.stop();
+            }
+            Debug.log("Game started! All " + Config.MIN_PLAYERS_TO_START + " players are ready.");
+        } else if (totalPlayers < Config.MIN_PLAYERS_TO_START && !waitingForPlayers) {
+            waitingForPlayers = true;
+            Debug.log("Waiting for more players... (" + totalPlayers + "/" + Config.MIN_PLAYERS_TO_START + ")");
+        }
     }
 }

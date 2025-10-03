@@ -12,6 +12,7 @@ public class GameServer extends JFrame {
     private ServerSocket serverSocket;
     private final Map<String, OnlinePlayer> onlinePlayers = new ConcurrentHashMap<>();
     private final Map<Socket, String> clientConnections = new ConcurrentHashMap<>();
+    private final Map<Socket, ObjectOutputStream> clientOutputs = new ConcurrentHashMap<>();
     private JTextArea logArea;
     private JLabel playerCountLabel;
     private JButton startBtn;
@@ -19,7 +20,9 @@ public class GameServer extends JFrame {
     private JList<String> playerList;
     private DefaultListModel<String> playerListModel;
     private JButton kickBtn;
+    private JLabel waitingLabel;
     private boolean isRunning = false;
+    private boolean gameStarted = false;
     
     public GameServer() {
         setTitle("Game Server - Debug");
@@ -39,6 +42,7 @@ public class GameServer extends JFrame {
         startBtn = new JButton("Start Server");
         stopBtn = new JButton("Stop Server");
         playerCountLabel = new JLabel("Players: 0");
+        waitingLabel = new JLabel("Waiting for players...");
         
         stopBtn.setEnabled(false);
         
@@ -49,6 +53,8 @@ public class GameServer extends JFrame {
         topPanel.add(stopBtn);
         topPanel.add(Box.createHorizontalStrut(20));
         topPanel.add(playerCountLabel);
+        topPanel.add(Box.createHorizontalStrut(20));
+        topPanel.add(waitingLabel);
         
 
         JSplitPane centerSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -143,63 +149,126 @@ public class GameServer extends JFrame {
     
     private void handleClient(Socket client) {
         new Thread(() -> {
+            ObjectOutputStream out = null;
+            ObjectInputStream in = null;
+            String clientId = client.getInetAddress().toString() + ":" + client.getPort();
+            
             try {
-                ObjectOutputStream out = new ObjectOutputStream(client.getOutputStream());
-                ObjectInputStream in = new ObjectInputStream(client.getInputStream());
+                out = new ObjectOutputStream(client.getOutputStream());
+                in = new ObjectInputStream(client.getInputStream());
                 clientOutputs.put(client, out);
                 
+                log("Client connected: " + clientId);
+                Thread.sleep(100);
+                
                 for (OnlinePlayer player : onlinePlayers.values()) {
-                    NetworkMessage joinMsg = NetworkMessage.createPlayerJoin(player.getPlayerData());
-                    out.writeObject(joinMsg);
+                    if (player != null && player.getPlayerData() != null) {
+                        NetworkMessage joinMsg = NetworkMessage.createPlayerJoin(player.getPlayerData());
+                        out.writeObject(joinMsg);
+                        out.flush();
+                        log("Sent existing player data to " + clientId + ": " + player.getPlayerId());
+                    }
                 }
                 
                 while (isRunning && !client.isClosed()) {
-                    NetworkMessage msg = (NetworkMessage) in.readObject();
-                    handleMessage(msg, client, out);
+                    try {
+                        NetworkMessage msg = (NetworkMessage) in.readObject();
+                        if (msg != null) {
+                            log("Received message from " + clientId + ": " + msg.type);
+                            handleMessage(msg, client, out);
+                        }
+                    } catch (java.io.EOFException e) {
+                        log("Client " + clientId + " disconnected (EOF)");
+                        break;
+                    } catch (java.net.SocketException e) {
+                        log("Client " + clientId + " disconnected (Socket)");
+                        break;
+                    } catch (java.io.IOException e) {
+                        log("Client " + clientId + " IO error: " + e.getMessage());
+                        break;
+                    }
                 }
             } catch (Exception e) {
-                log("Client handler error: " + e.getMessage());
+                log("Client handler error for " + clientId + ": " + e.getMessage());
             } finally {
                 try {
                     String playerId = clientConnections.get(client);
-                    if (playerId != null) {
-                        OnlinePlayer player = onlinePlayers.get(playerId);
-                        onlinePlayers.remove(playerId);
-                        clientConnections.remove(client);
-                        log("Player disconnected: " + playerId);
-                        
-                        NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, player.getPlayerData());
-                        broadcastMessage(leaveMsg, null);
-                        updatePlayerCount();
-                        updatePlayerList();
-                    }
+                        if (playerId != null) {
+                            OnlinePlayer player = onlinePlayers.get(playerId);
+                            if (player != null) {
+                                onlinePlayers.remove(playerId);
+                                dataManager.removePlayer(playerId);
+                                log("Player disconnected: " + playerId + " (" + clientId + ")");
+                                
+                                NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, player.getPlayerData());
+                                broadcastMessage(leaveMsg, null);
+                                updatePlayerCount();
+                                updatePlayerList();
+                            }
+                            clientConnections.remove(client);
+                        }
                     clientOutputs.remove(client);
+                    if (out != null) {
+                        out.close();
+                    }
+                    if (in != null) {
+                        in.close();
+                    }
                     client.close();
+                    log("Client " + clientId + " cleanup completed");
                 } catch (IOException e) {
-                    log("Close client error: " + e.getMessage());
+                    log("Close client error for " + clientId + ": " + e.getMessage());
                 }
             }
         }).start();
     }
     
+    private OnlineDataManager dataManager = new OnlineDataManagerImpl();
+    
     private void handleMessage(NetworkMessage msg, Socket sender, ObjectOutputStream senderOut) {
+        if (msg == null || msg.playerData == null) {
+            log("Received null message or playerData");
+            return;
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        
         switch (msg.type) {
             case PLAYER_JOIN:
-                OnlinePlayer newPlayer = new OnlinePlayer(msg.playerData);
-                onlinePlayers.put(msg.playerData.playerId, newPlayer);
-                clientConnections.put(sender, msg.playerData.playerId);
-                log("Player joined: " + msg.playerData.playerName + " (" + msg.playerData.playerId + ") at " + msg.playerData.position);
-                broadcastMessage(msg, sender);
-                updatePlayerCount();
-                updatePlayerList();
+                if (msg.playerData.playerId != null && !msg.playerData.playerId.isEmpty()) {
+                    if (!onlinePlayers.containsKey(msg.playerData.playerId)) {
+                        OnlinePlayer newPlayer = new OnlinePlayer(msg.playerData);
+                        onlinePlayers.put(msg.playerData.playerId, newPlayer);
+                        clientConnections.put(sender, msg.playerData.playerId);
+                        dataManager.updatePlayerPosition(msg.playerData.playerId, msg.playerData.position);
+                        dataManager.updatePlayerLocation(msg.playerData.playerId, msg.playerData.currentLocation);
+                        log("Player joined: " + msg.playerData.playerName + " (" + msg.playerData.playerId + ") at " + msg.playerData.position + " Character: " + msg.playerData.characterImage);
+                        log("Total players now: " + onlinePlayers.size());
+                        broadcastMessage(msg, sender);
+                        updatePlayerCount();
+                        updatePlayerList();
+                    } else {
+                        log("Player " + msg.playerData.playerId + " already exists, updating data");
+                        OnlinePlayer existingPlayer = onlinePlayers.get(msg.playerData.playerId);
+                        existingPlayer.updateFromPlayerData(msg.playerData);
+                        broadcastMessage(msg, sender);
+                    }
+                }
                 break;
                 
             case PLAYER_MOVE:
                 OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
                 if (player != null) {
-                    player.updatePosition(msg.playerData.position);
-                    log("Player moved: " + msg.playerData.playerId + " to " + msg.playerData.position);
-                    broadcastMessage(msg, sender);
+                    Point currentPos = player.getPosition();
+                    Point newPos = msg.playerData.position;
+                    if (currentPos == null || !currentPos.equals(newPos)) {
+                        player.updatePosition(newPos);
+                        dataManager.updatePlayerPosition(msg.playerData.playerId, newPos);
+                        log("Player moved: " + msg.playerData.playerId + " to " + newPos);
+                        broadcastMessage(msg, sender);
+                    }
+                } else {
+                    log("Player not found for move: " + msg.playerData.playerId);
                 }
                 break;
                 
@@ -215,18 +284,26 @@ public class GameServer extends JFrame {
             case PLAYER_STATS_UPDATE:
                 OnlinePlayer statsPlayer = onlinePlayers.get(msg.playerData.playerId);
                 if (statsPlayer != null) {
-                    statsPlayer.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
-                    log("Player stats updated: " + msg.playerData.playerId);
-                    broadcastMessage(msg, sender);
+                    if (dataManager.shouldUpdateStats(msg.playerData.playerId, msg.playerData.money, msg.playerData.health, msg.playerData.energy)) {
+                        statsPlayer.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
+                        dataManager.updatePlayerStats(msg.playerData.playerId, msg.playerData.money, msg.playerData.health, msg.playerData.energy);
+                        log("Player stats updated: " + msg.playerData.playerId);
+                        broadcastMessage(msg, sender);
+                    }
+                } else {
+                    log("Player not found for stats update: " + msg.playerData.playerId);
                 }
                 break;
                 
             case PLAYER_LOCATION_CHANGE:
                 OnlinePlayer locationPlayer = onlinePlayers.get(msg.playerData.playerId);
                 if (locationPlayer != null) {
-                    locationPlayer.updateLocation(msg.playerData.currentLocation);
-                    log("Player location changed: " + msg.playerData.playerId + " to " + msg.playerData.currentLocation);
-                    broadcastMessage(msg, sender);
+                    if (dataManager.shouldUpdateLocation(msg.playerData.playerId, msg.playerData.currentLocation)) {
+                        locationPlayer.updateLocation(msg.playerData.currentLocation);
+                        dataManager.updatePlayerLocation(msg.playerData.playerId, msg.playerData.currentLocation);
+                        log("Player location changed: " + msg.playerData.playerId + " to " + msg.playerData.currentLocation);
+                        broadcastMessage(msg, sender);
+                    }
                 }
                 break;
                 
@@ -240,24 +317,27 @@ public class GameServer extends JFrame {
         }
     }
     
-    private final Map<Socket, ObjectOutputStream> clientOutputs = new ConcurrentHashMap<>();
-    
     private void broadcastMessage(NetworkMessage msg, Socket exclude) {
+        java.util.List<Socket> toRemove = new java.util.ArrayList<>();
         for (Map.Entry<Socket, String> entry : clientConnections.entrySet()) {
             Socket client = entry.getKey();
             if (client != exclude && !client.isClosed()) {
                 try {
                     ObjectOutputStream out = clientOutputs.get(client);
-                    if (out == null) {
-                        out = new ObjectOutputStream(client.getOutputStream());
-                        clientOutputs.put(client, out);
+                    if (out != null) {
+                        out.writeObject(msg);
+                        out.flush();
                     }
-                    out.writeObject(msg);
                 } catch (IOException e) {
                     log("Broadcast error to " + entry.getValue() + ": " + e.getMessage());
-                    clientOutputs.remove(client);
+                    toRemove.add(client);
                 }
             }
+        }
+        
+        for (Socket client : toRemove) {
+            clientOutputs.remove(client);
+            clientConnections.remove(client);
         }
     }
     
@@ -271,7 +351,18 @@ public class GameServer extends JFrame {
     
     private void updatePlayerCount() {
         SwingUtilities.invokeLater(() -> {
-            playerCountLabel.setText("Players: " + onlinePlayers.size());
+            int playerCount = onlinePlayers.size();
+            playerCountLabel.setText("Players: " + playerCount);
+            
+            if (playerCount >= 4) {
+                waitingLabel.setText("Ready to start! (4/4)");
+                waitingLabel.setForeground(Color.GREEN);
+                gameStarted = true;
+            } else {
+                waitingLabel.setText("Waiting for players... (" + playerCount + "/4)");
+                waitingLabel.setForeground(Color.ORANGE);
+                gameStarted = false;
+            }
         });
     }
     
@@ -308,12 +399,16 @@ public class GameServer extends JFrame {
     private class PlayerListCellRenderer extends JLabel implements ListCellRenderer<String> {
         private ImageIcon male01Icon;
         private ImageIcon male02Icon;
+        private ImageIcon female01Icon;
+        private ImageIcon female02Icon;
         
         public PlayerListCellRenderer() {
             setOpaque(true);
             try {
                 male01Icon = new ImageIcon("assets/players/Male-01.png");
                 male02Icon = new ImageIcon("assets/players/Male-02.png");
+                female01Icon = new ImageIcon("assets/players/Female-01.png");
+                female02Icon = new ImageIcon("assets/players/Female-02.png");
             } catch (Exception e) {
                 System.out.println("Could not load player icons: " + e.getMessage());
             }
@@ -322,16 +417,26 @@ public class GameServer extends JFrame {
         @Override
         public Component getListCellRendererComponent(JList<? extends String> list, String value, int index, boolean isSelected, boolean cellHasFocus) {
             setText(value);
+            setIcon(null);
             
-            if (value != null) {
-                String playerId = value.substring(value.indexOf("(") + 1, value.indexOf(")"));
-                OnlinePlayer player = onlinePlayers.get(playerId);
-                if (player != null) {
-                    if (player.getCharacterImage().contains("Male-01")) {
-                        setIcon(male01Icon);
-                    } else if (player.getCharacterImage().contains("Male-02")) {
-                        setIcon(male02Icon);
+            if (value != null && value.contains("(") && value.contains(")")) {
+                try {
+                    String playerId = value.substring(value.indexOf("(") + 1, value.indexOf(")"));
+                    OnlinePlayer player = onlinePlayers.get(playerId);
+                    if (player != null && player.getCharacterImage() != null) {
+                        String characterImage = player.getCharacterImage();
+                        if (characterImage.contains("Male-01")) {
+                            setIcon(male01Icon);
+                        } else if (characterImage.contains("Male-02")) {
+                            setIcon(male02Icon);
+                        } else if (characterImage.contains("Female-01")) {
+                            setIcon(female01Icon);
+                        } else if (characterImage.contains("Female-02")) {
+                            setIcon(female02Icon);
+                        }
                     }
+                } catch (Exception e) {
+                    System.out.println("Error rendering player: " + e.getMessage());
                 }
             }
             
