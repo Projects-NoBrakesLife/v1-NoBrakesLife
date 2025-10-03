@@ -1,48 +1,54 @@
 package network;
 
+import core.PlayerState;
 import java.awt.Point;
 import java.io.Serializable;
 
 public class NetworkMessage implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     public enum MessageType {
         PLAYER_JOIN,
         PLAYER_LEAVE,
         PLAYER_MOVE,
-        PLAYER_UPDATE
+        PLAYER_UPDATE,
+        PLAYER_STATS_UPDATE,
+        PLAYER_LOCATION_CHANGE
     }
     
     public MessageType type;
-    public String playerId;
-    public String playerName;
-    public Point position;
-    public String characterImage;
+    public PlayerData playerData;
     public long timestamp;
     
-    public NetworkMessage(MessageType type, String playerId) {
+    public NetworkMessage(MessageType type, PlayerData playerData) {
         this.type = type;
-        this.playerId = playerId;
+        this.playerData = playerData;
         this.timestamp = System.currentTimeMillis();
     }
     
-    public static NetworkMessage createPlayerJoin(String playerId, String playerName, Point position, String characterImage) {
-        NetworkMessage msg = new NetworkMessage(MessageType.PLAYER_JOIN, playerId);
-        msg.playerName = playerName;
-        msg.position = position;
-        msg.characterImage = characterImage;
-        return msg;
+    public static NetworkMessage createPlayerJoin(PlayerData playerData) {
+        return new NetworkMessage(MessageType.PLAYER_JOIN, playerData);
     }
     
     public static NetworkMessage createPlayerMove(String playerId, Point position) {
-        NetworkMessage msg = new NetworkMessage(MessageType.PLAYER_MOVE, playerId);
-        msg.position = position;
-        return msg;
+        PlayerData data = new PlayerData(playerId, "", position, "");
+        data.updatePosition(position);
+        return new NetworkMessage(MessageType.PLAYER_MOVE, data);
     }
     
-    public static NetworkMessage createPlayerUpdate(String playerId, String playerName, Point position, String characterImage) {
-        NetworkMessage msg = new NetworkMessage(MessageType.PLAYER_UPDATE, playerId);
-        msg.playerName = playerName;
-        msg.position = position;
-        msg.characterImage = characterImage;
-        return msg;
+    public static NetworkMessage createPlayerUpdate(PlayerData playerData) {
+        return new NetworkMessage(MessageType.PLAYER_UPDATE, playerData);
+    }
+    
+    public static NetworkMessage createPlayerStatsUpdate(String playerId, int money, int health, int energy) {
+        PlayerData data = new PlayerData(playerId, "", new Point(), "");
+        data.updateStats(money, health, energy);
+        return new NetworkMessage(MessageType.PLAYER_STATS_UPDATE, data);
+    }
+    
+    public static NetworkMessage createPlayerLocationChange(String playerId, PlayerState.Location location) {
+        PlayerData data = new PlayerData(playerId, "", new Point(), "");
+        data.updateLocation(location);
+        return new NetworkMessage(MessageType.PLAYER_LOCATION_CHANGE, data);
     }
 }

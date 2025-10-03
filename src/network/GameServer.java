@@ -10,8 +10,8 @@ import javax.swing.*;
 public class GameServer extends JFrame {
     private static final int PORT = 12345;
     private ServerSocket serverSocket;
-    private Map<String, OnlinePlayer> onlinePlayers = new ConcurrentHashMap<>();
-    private Map<Socket, String> clientConnections = new ConcurrentHashMap<>();
+    private final Map<String, OnlinePlayer> onlinePlayers = new ConcurrentHashMap<>();
+    private final Map<Socket, String> clientConnections = new ConcurrentHashMap<>();
     private JTextArea logArea;
     private JLabel playerCountLabel;
     private JButton startBtn;
@@ -149,7 +149,7 @@ public class GameServer extends JFrame {
                 clientOutputs.put(client, out);
                 
                 for (OnlinePlayer player : onlinePlayers.values()) {
-                    NetworkMessage joinMsg = NetworkMessage.createPlayerJoin(player.playerId, player.playerName, player.position, player.characterImage);
+                    NetworkMessage joinMsg = NetworkMessage.createPlayerJoin(player.getPlayerData());
                     out.writeObject(joinMsg);
                 }
                 
@@ -163,11 +163,12 @@ public class GameServer extends JFrame {
                 try {
                     String playerId = clientConnections.get(client);
                     if (playerId != null) {
+                        OnlinePlayer player = onlinePlayers.get(playerId);
                         onlinePlayers.remove(playerId);
                         clientConnections.remove(client);
                         log("Player disconnected: " + playerId);
                         
-                        NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, playerId);
+                        NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, player.getPlayerData());
                         broadcastMessage(leaveMsg, null);
                         updatePlayerCount();
                         updatePlayerList();
@@ -184,44 +185,62 @@ public class GameServer extends JFrame {
     private void handleMessage(NetworkMessage msg, Socket sender, ObjectOutputStream senderOut) {
         switch (msg.type) {
             case PLAYER_JOIN:
-                OnlinePlayer newPlayer = new OnlinePlayer(msg.playerId, msg.playerName, msg.position, msg.characterImage);
-                onlinePlayers.put(msg.playerId, newPlayer);
-                clientConnections.put(sender, msg.playerId);
-                log("Player joined: " + msg.playerName + " (" + msg.playerId + ") at " + msg.position + " with " + msg.characterImage);
+                OnlinePlayer newPlayer = new OnlinePlayer(msg.playerData);
+                onlinePlayers.put(msg.playerData.playerId, newPlayer);
+                clientConnections.put(sender, msg.playerData.playerId);
+                log("Player joined: " + msg.playerData.playerName + " (" + msg.playerData.playerId + ") at " + msg.playerData.position);
                 broadcastMessage(msg, sender);
                 updatePlayerCount();
                 updatePlayerList();
                 break;
                 
             case PLAYER_MOVE:
-                OnlinePlayer player = onlinePlayers.get(msg.playerId);
+                OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
                 if (player != null) {
-                    player.updatePosition(msg.position);
-                    log("Player moved: " + msg.playerId + " to " + msg.position);
+                    player.updatePosition(msg.playerData.position);
+                    log("Player moved: " + msg.playerData.playerId + " to " + msg.playerData.position);
                     broadcastMessage(msg, sender);
                 }
                 break;
                 
             case PLAYER_UPDATE:
-                OnlinePlayer updatePlayer = onlinePlayers.get(msg.playerId);
+                OnlinePlayer updatePlayer = onlinePlayers.get(msg.playerData.playerId);
                 if (updatePlayer != null) {
-                    updatePlayer.characterImage = msg.characterImage;
-                    log("Player updated character: " + msg.playerId + " to " + msg.characterImage);
+                    updatePlayer.updateFromPlayerData(msg.playerData);
+                    log("Player updated: " + msg.playerData.playerId);
+                    broadcastMessage(msg, sender);
+                }
+                break;
+                
+            case PLAYER_STATS_UPDATE:
+                OnlinePlayer statsPlayer = onlinePlayers.get(msg.playerData.playerId);
+                if (statsPlayer != null) {
+                    statsPlayer.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
+                    log("Player stats updated: " + msg.playerData.playerId);
+                    broadcastMessage(msg, sender);
+                }
+                break;
+                
+            case PLAYER_LOCATION_CHANGE:
+                OnlinePlayer locationPlayer = onlinePlayers.get(msg.playerData.playerId);
+                if (locationPlayer != null) {
+                    locationPlayer.updateLocation(msg.playerData.currentLocation);
+                    log("Player location changed: " + msg.playerData.playerId + " to " + msg.playerData.currentLocation);
                     broadcastMessage(msg, sender);
                 }
                 break;
                 
             case PLAYER_LEAVE:
-                onlinePlayers.remove(msg.playerId);
+                onlinePlayers.remove(msg.playerData.playerId);
                 clientConnections.remove(sender);
-                log("Player left: " + msg.playerId);
+                log("Player left: " + msg.playerData.playerId);
                 broadcastMessage(msg, sender);
                 updatePlayerCount();
                 break;
         }
     }
     
-    private Map<Socket, ObjectOutputStream> clientOutputs = new ConcurrentHashMap<>();
+    private final Map<Socket, ObjectOutputStream> clientOutputs = new ConcurrentHashMap<>();
     
     private void broadcastMessage(NetworkMessage msg, Socket exclude) {
         for (Map.Entry<Socket, String> entry : clientConnections.entrySet()) {
@@ -260,7 +279,7 @@ public class GameServer extends JFrame {
         SwingUtilities.invokeLater(() -> {
             playerListModel.clear();
             for (OnlinePlayer player : onlinePlayers.values()) {
-                playerListModel.addElement(player.playerName + " (" + player.playerId + ")");
+                playerListModel.addElement(player.getPlayerName() + " (" + player.getPlayerId() + ")");
             }
         });
     }
@@ -308,9 +327,9 @@ public class GameServer extends JFrame {
                 String playerId = value.substring(value.indexOf("(") + 1, value.indexOf(")"));
                 OnlinePlayer player = onlinePlayers.get(playerId);
                 if (player != null) {
-                    if (player.characterImage.contains("Male-01")) {
+                    if (player.getCharacterImage().contains("Male-01")) {
                         setIcon(male01Icon);
-                    } else if (player.characterImage.contains("Male-02")) {
+                    } else if (player.getCharacterImage().contains("Male-02")) {
                         setIcon(male02Icon);
                     }
                 }
