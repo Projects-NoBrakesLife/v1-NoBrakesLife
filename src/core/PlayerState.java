@@ -16,6 +16,7 @@ public class PlayerState {
     private Location currentLocation;
     private Point currentPosition;
     private String playerName;
+    private String characterImagePath;
     private int money;
     private int health;
     private int energy;
@@ -24,6 +25,7 @@ public class PlayerState {
         this.currentLocation = Location.APARTMENT_SHITTY;
         this.currentPosition = new Point(878, 300);
         this.playerName = Lang.DEFAULT_PLAYER_NAME;
+        this.characterImagePath = Lang.MALE_01;
         this.money = Config.STARTING_MONEY;
         this.health = Config.STARTING_HEALTH;
         this.energy = Config.STARTING_ENERGY;
@@ -43,8 +45,10 @@ public class PlayerState {
     }
 
     public void setCurrentPosition(Point position) {
-        this.currentPosition = new Point(position);
-        Debug.log(Lang.PLAYER_POSITION_SET + position);
+        if (currentPosition == null || !currentPosition.equals(position)) {
+            this.currentPosition = new Point(position);
+            Debug.log(Lang.PLAYER_POSITION_SET + position);
+        }
     }
 
     public String getPlayerName() {
@@ -53,6 +57,14 @@ public class PlayerState {
 
     public void setPlayerName(String name) {
         this.playerName = name;
+    }
+
+    public String getCharacterImagePath() {
+        return characterImagePath;
+    }
+
+    public void setCharacterImagePath(String characterImagePath) {
+        this.characterImagePath = characterImagePath;
     }
 
     public int getMoney() {

@@ -40,7 +40,7 @@ public class Main {
             }
         });
 
-        gamePanel.selectCharacter();
         frame.setVisible(true);
+        gamePanel.selectCharacter();
     }
 }

@@ -116,6 +116,8 @@ public class Lang {
     
     public static final String MALE_01 = "./assets/players/Male-01.png";
     public static final String MALE_02 = "./assets/players/Male-02.png";
+    public static final String FEMALE_01 = "./assets/players/Female-01.png";
+    public static final String FEMALE_02 = "./assets/players/Female-02.png";
     public static final String DEFAULT_PLAYER_NAME = "ผู้เล่น";
     
     public static final String APARTMENT_WINDOW = "apartment";

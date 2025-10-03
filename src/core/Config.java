@@ -16,6 +16,9 @@ public class Config {
     // การตั้งค่า UI
     public static final double UI_SCALE = 0.3;
     public static final int UI_OFFSET_Y = 50;
+    
+    // การตั้งค่าเกม
+    public static final int MIN_PLAYERS_TO_START = 3;
 
     // ตำแหน่งของอาคารต่างๆ
     public static final Point APARTMENT_POINT = new Point(779, 250);
