@@ -1,5 +1,6 @@
 package network;
 
+import core.PlayerState;
 import java.awt.Point;
 import java.io.*;
 import java.net.*;
@@ -10,11 +11,7 @@ public class NetworkClient {
     private static final String SERVER_IP = "localhost";
     private static final int PORT = 12345;
     
-    private String myPlayerId;
-    private String myPlayerName;
-    private Point myPosition;
-    private String myCharacterImage;
-    
+    private PlayerData myPlayerData;
     private Socket clientSocket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
@@ -23,10 +20,11 @@ public class NetworkClient {
     private boolean isConnected = false;
     
     public NetworkClient(String playerId, String playerName, Point startPosition, String characterImage) {
-        this.myPlayerId = playerId;
-        this.myPlayerName = playerName;
-        this.myPosition = startPosition;
-        this.myCharacterImage = characterImage;
+        this.myPlayerData = new PlayerData(playerId, playerName, startPosition, characterImage);
+    }
+    
+    public NetworkClient(PlayerData playerData) {
+        this.myPlayerData = playerData.copy();
     }
     
     public void connect() {
@@ -39,7 +37,7 @@ public class NetworkClient {
                 isConnected = true;
                 System.out.println("Connected to server");
                 
-                sendMessage(NetworkMessage.createPlayerJoin(myPlayerId, myPlayerName, myPosition, myCharacterImage));
+                sendMessage(NetworkMessage.createPlayerJoin(myPlayerData));
                 
                 while (isConnected && !clientSocket.isClosed()) {
                     NetworkMessage msg = (NetworkMessage) in.readObject();
@@ -56,51 +54,84 @@ public class NetworkClient {
     private void handleMessage(NetworkMessage msg) {
         switch (msg.type) {
             case PLAYER_JOIN:
-                if (!msg.playerId.equals(myPlayerId)) {
-                    OnlinePlayer newPlayer = new OnlinePlayer(msg.playerId, msg.playerName, msg.position, msg.characterImage);
-                    onlinePlayers.put(msg.playerId, newPlayer);
-                    System.out.println("Player joined: " + msg.playerName + " at " + msg.position + " with " + msg.characterImage);
+                if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
+                    OnlinePlayer newPlayer = new OnlinePlayer(msg.playerData);
+                    onlinePlayers.put(msg.playerData.playerId, newPlayer);
+                    System.out.println("Player joined: " + msg.playerData.playerName + " at " + msg.playerData.position);
                 }
                 break;
                 
             case PLAYER_MOVE:
-                if (!msg.playerId.equals(myPlayerId)) {
-                    OnlinePlayer player = onlinePlayers.get(msg.playerId);
+                if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
+                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
                     if (player != null) {
-                        player.updatePosition(msg.position);
-                        System.out.println("Player moved: " + msg.playerId + " to " + msg.position);
+                        player.updatePosition(msg.playerData.position);
+                        System.out.println("Player moved: " + msg.playerData.playerId + " to " + msg.playerData.position);
                     }
                 }
                 break;
                 
             case PLAYER_UPDATE:
-                if (!msg.playerId.equals(myPlayerId)) {
-                    OnlinePlayer player = onlinePlayers.get(msg.playerId);
+                if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
+                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
                     if (player != null) {
-                        player.characterImage = msg.characterImage;
-                        System.out.println("Player updated character: " + msg.playerId + " to " + msg.characterImage);
+                        player.updateFromPlayerData(msg.playerData);
+                        System.out.println("Player updated: " + msg.playerData.playerId);
+                    }
+                }
+                break;
+                
+            case PLAYER_STATS_UPDATE:
+                if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
+                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    if (player != null) {
+                        player.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
+                        System.out.println("Player stats updated: " + msg.playerData.playerId);
+                    }
+                }
+                break;
+                
+            case PLAYER_LOCATION_CHANGE:
+                if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
+                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    if (player != null) {
+                        player.updateLocation(msg.playerData.currentLocation);
+                        System.out.println("Player location changed: " + msg.playerData.playerId + " to " + msg.playerData.currentLocation);
                     }
                 }
                 break;
                 
             case PLAYER_LEAVE:
-                onlinePlayers.remove(msg.playerId);
-                System.out.println("Player left: " + msg.playerId);
+                onlinePlayers.remove(msg.playerData.playerId);
+                System.out.println("Player left: " + msg.playerData.playerId);
                 break;
         }
     }
     
     public void sendPlayerMove(Point newPosition) {
-        myPosition = newPosition;
+        myPlayerData.updatePosition(newPosition);
         if (isConnected) {
-            sendMessage(NetworkMessage.createPlayerMove(myPlayerId, newPosition));
+            sendMessage(NetworkMessage.createPlayerMove(myPlayerData.playerId, newPosition));
         }
     }
     
-    public void updateCharacterImage(String newCharacterImage) {
-        myCharacterImage = newCharacterImage;
+    public void sendPlayerStatsUpdate(int money, int health, int energy) {
+        myPlayerData.updateStats(money, health, energy);
         if (isConnected) {
-            sendMessage(NetworkMessage.createPlayerUpdate(myPlayerId, myPlayerName, myPosition, myCharacterImage));
+            sendMessage(NetworkMessage.createPlayerStatsUpdate(myPlayerData.playerId, money, health, energy));
+        }
+    }
+    
+    public void sendPlayerLocationChange(PlayerState.Location location) {
+        myPlayerData.updateLocation(location);
+        if (isConnected) {
+            sendMessage(NetworkMessage.createPlayerLocationChange(myPlayerData.playerId, location));
+        }
+    }
+    
+    public void sendPlayerUpdate() {
+        if (isConnected) {
+            sendMessage(NetworkMessage.createPlayerUpdate(myPlayerData));
         }
     }
     
@@ -116,6 +147,10 @@ public class NetworkClient {
     
     public Map<String, OnlinePlayer> getOnlinePlayers() {
         return onlinePlayers;
+    }
+    
+    public PlayerData getMyPlayerData() {
+        return myPlayerData.copy();
     }
     
     public boolean isConnected() {

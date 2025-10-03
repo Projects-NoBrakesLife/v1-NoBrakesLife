@@ -62,6 +62,7 @@ public class GamePanel extends JPanel {
 
         javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, e -> {
             updateOnlinePlayers();
+            syncPlayerState();
         });
         networkTimer.start();
 
@@ -158,7 +159,7 @@ public class GamePanel extends JPanel {
     public void selectCharacter() {
         String selectedImage = CharacterSelection.showCharacterSelection(parentFrame);
         character = new core.Character(character.getPosition(), selectedImage);
-        networkClient.updateCharacterImage(selectedImage);
+        networkClient.sendPlayerUpdate();
         Debug.log(Lang.CHARACTER_SELECTED + selectedImage);
     }
 
@@ -281,6 +282,7 @@ public class GamePanel extends JPanel {
                 character.setPosition(targetPoint);
                 playerState.setCurrentPosition(targetPoint);
                 networkClient.sendPlayerMove(targetPoint);
+                networkClient.sendPlayerLocationChange(playerState.getCurrentLocation());
                 currentPathIndex++;
                 repaint();
             } else {
@@ -332,12 +334,12 @@ public class GamePanel extends JPanel {
         for (String playerId : currentPlayerIds) {
             OnlinePlayer player = players.get(playerId);
             if (!onlineCharacters.containsKey(playerId)) {
-                onlineCharacters.put(playerId, new core.Character(player.position, player.characterImage));
-                Debug.log(Lang.ONLINE_CHARACTER_CREATED + playerId + Lang.ONLINE_CHARACTER_WITH + player.characterImage);
+                onlineCharacters.put(playerId, new core.Character(player.getPosition(), player.getCharacterImage()));
+                Debug.log(Lang.ONLINE_CHARACTER_CREATED + playerId + Lang.ONLINE_CHARACTER_WITH + player.getCharacterImage());
             } else {
                 core.Character existingChar = onlineCharacters.get(playerId);
-                existingChar.setPosition(player.position);
-                existingChar.updateImage(player.characterImage);
+                existingChar.setPosition(player.getPosition());
+                existingChar.updateImage(player.getCharacterImage());
             }
         }
 
@@ -349,6 +351,16 @@ public class GamePanel extends JPanel {
         }
 
         repaint();
+    }
+
+    private void syncPlayerState() {
+        if (networkClient.isConnected()) {
+            networkClient.sendPlayerStatsUpdate(
+                playerState.getMoney(),
+                playerState.getHealth(),
+                playerState.getEnergy()
+            );
+        }
     }
 
     public void mousePressed(java.awt.event.MouseEvent e) {
