@@ -3,6 +3,7 @@ package core;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -106,7 +107,6 @@ public class GamePanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (!isMyTurn()) {
-                    Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
                     return;
                 }
                 
@@ -114,12 +114,10 @@ public class GamePanel extends JPanel {
                     String pointCode = "new Point(" + e.getX() + ", " + e.getY() + ")";
                     java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
                             new java.awt.datatransfer.StringSelection(pointCode), null);
-                    Debug.log(Lang.COPIED + pointCode);
                     return;
                 }
 
                 if (isMoving) {
-                    Debug.log(Lang.CHARACTER_MOVING);
                     return;
                 }
 
@@ -241,6 +239,7 @@ public class GamePanel extends JPanel {
             onlineHUDManager.drawAll((Graphics2D) g);
         }
         
+        drawTurnPopup((Graphics2D) g);
 
         if (waitingForPlayers) {
             g.setColor(new Color(0, 0, 0, 150));
@@ -375,7 +374,6 @@ public class GamePanel extends JPanel {
         moveTimer.stop();
         isMoving = false;
         playerState.setCurrentLocation(targetLocation);
-        Debug.log(Lang.ARRIVED_AT + targetLocation);
         playerState.printStatus();
         showWindowForLocation(targetLocation);
         
@@ -385,11 +383,6 @@ public class GamePanel extends JPanel {
     }
 
     private void showWindowForLocation(PlayerState.Location location) {
-        if (!isMyTurn()) {
-            Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
-            return;
-        }
-        
         if (location == PlayerState.Location.APARTMENT_SHITTY) {
             windowManager.showWindow(Lang.APARTMENT_WINDOW, Lang.APARTMENT_TITLE);
         } else if (location == PlayerState.Location.BANK) {
@@ -422,6 +415,11 @@ public class GamePanel extends JPanel {
     private static final long POSITION_UPDATE_INTERVAL = 500;
     private static final long INDIVIDUAL_UPDATE_INTERVAL = 300;
     
+    private BufferedImage currentTurnTokenIcon;
+    private boolean showTurnPopup = false;
+    private long turnPopupStartTime = 0;
+    private static final long TURN_POPUP_DURATION = 6000;
+    
     private String currentTurnPlayer = null;
     private boolean isTurnBasedMode = true;
     
@@ -441,8 +439,8 @@ public class GamePanel extends JPanel {
             }
             
             if (allPlayerIds.size() > 0) {
+                java.util.Collections.sort(allPlayerIds);
                 currentTurnPlayer = allPlayerIds.get(0);
-                Debug.log("Turn system initialized. First turn: " + currentTurnPlayer + " (my ID: " + myPlayerId + ")");
                 
                 updatePlayerNumbers(allPlayerIds);
                 
@@ -452,6 +450,10 @@ public class GamePanel extends JPanel {
                 if (characterHUD != null) {
                     characterHUD.setCurrentTurn(currentTurnPlayer.equals(myPlayerId));
                 }
+                if (networkClient != null) {
+                    networkClient.sendTurnUpdate(currentTurnPlayer);
+                }
+                loadTurnPopupIcon();
             }
         }
     }
@@ -470,10 +472,11 @@ public class GamePanel extends JPanel {
             }
             
             if (allPlayerIds.size() > 1) {
+                java.util.Collections.sort(allPlayerIds);
+                
                 int currentIndex = allPlayerIds.indexOf(currentTurnPlayer);
                 int nextIndex = (currentIndex + 1) % allPlayerIds.size();
                 currentTurnPlayer = allPlayerIds.get(nextIndex);
-                Debug.log("Next turn: " + currentTurnPlayer + " (my ID: " + myPlayerId + ")");
                 
                 updatePlayerNumbers(allPlayerIds);
                 
@@ -483,6 +486,10 @@ public class GamePanel extends JPanel {
                 if (characterHUD != null) {
                     characterHUD.setCurrentTurn(currentTurnPlayer.equals(myPlayerId));
                 }
+                if (networkClient != null) {
+                    networkClient.sendTurnUpdate(currentTurnPlayer);
+                }
+                loadTurnPopupIcon();
             }
         }
     }
@@ -494,7 +501,6 @@ public class GamePanel extends JPanel {
         
         String myPlayerId = networkClient.getMyPlayerData().playerId;
         boolean isMyTurn = currentTurnPlayer.equals(myPlayerId);
-        Debug.log("Checking turn: current=" + currentTurnPlayer + ", my=" + myPlayerId + ", isMyTurn=" + isMyTurn);
         return isMyTurn;
     }
     
@@ -597,8 +603,31 @@ public class GamePanel extends JPanel {
         }
     }
     
+    private void loadTurnPopupIcon() {
+        if (currentTurnPlayer != null && networkClient != null) {
+            try {
+                String myPlayerId = networkClient.getMyPlayerData().playerId;
+                java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
+                allPlayerIds.add(myPlayerId);
+                allPlayerIds.addAll(networkClient.getOnlinePlayers().keySet());
+                java.util.Collections.sort(allPlayerIds);
+                
+                int playerNumber = allPlayerIds.indexOf(currentTurnPlayer) + 1;
+                String tokenPath = "assets/ui/hud/P" + playerNumber + " Back.png";
+                currentTurnTokenIcon = javax.imageio.ImageIO.read(new java.io.File(tokenPath));
+                
+                showTurnPopup = true;
+                turnPopupStartTime = System.currentTimeMillis();
+            } catch (Exception e) {
+                currentTurnTokenIcon = null;
+            }
+        }
+    }
+    
     private void updatePlayerNumbers(java.util.List<String> allPlayerIds) {
         String myPlayerId = networkClient.getMyPlayerData().playerId;
+        
+        java.util.Collections.sort(allPlayerIds);
         
         for (int i = 0; i < allPlayerIds.size(); i++) {
             String playerId = allPlayerIds.get(i);
@@ -612,6 +641,23 @@ public class GamePanel extends JPanel {
                 if (onlineHUDManager != null) {
                     onlineHUDManager.setPlayerNumber(playerId, playerNumber);
                 }
+            }
+        }
+    }
+    
+    private void drawTurnPopup(Graphics2D g2d) {
+        if (showTurnPopup && currentTurnTokenIcon != null) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - turnPopupStartTime < TURN_POPUP_DURATION) {
+                int centerX = Config.GAME_WIDTH / 2;
+                int centerY = Config.GAME_HEIGHT / 2;
+                int tokenSize = 120;
+                
+         
+                g2d.drawImage(currentTurnTokenIcon, centerX - tokenSize/2, centerY - tokenSize/2, 
+                            tokenSize, tokenSize, null);
+            } else {
+                showTurnPopup = false;
             }
         }
     }
@@ -711,10 +757,9 @@ public class GamePanel extends JPanel {
             if (waitingTimer != null) {
                 waitingTimer.stop();
             }
-            Debug.log("Game started! All " + Config.MIN_PLAYERS_TO_START + " players are ready.");
+            loadTurnPopupIcon();
         } else if (totalPlayers < Config.MIN_PLAYERS_TO_START && !waitingForPlayers) {
             waitingForPlayers = true;
-            Debug.log("Waiting for more players... (" + totalPlayers + "/" + Config.MIN_PLAYERS_TO_START + ")");
         }
     }
 }
