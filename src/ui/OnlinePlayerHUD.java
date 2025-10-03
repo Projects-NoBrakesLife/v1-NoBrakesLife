@@ -39,7 +39,7 @@ public class OnlinePlayerHUD {
         this.playerNumber = playerNumber;
         this.mainCircleRadius = 40;
         this.iconRadius = 16;
-        this.hudFont = FontManager.getFontForText("HUD", 10, Font.BOLD);
+        this.hudFont = FontManager.getSmartThaiFont(10, Font.BOLD);
         this.backgroundColor = new Color(0, 0, 0, 120);
         this.borderColor = new Color(255, 255, 255, 180);
         this.textColor = Color.WHITE;
@@ -61,6 +61,13 @@ public class OnlinePlayerHUD {
     }
     
     private void loadTokenIcon() {
+        if (playerNumber <= 0) {
+            System.out.println("Player number ไม่ถูกต้องสำหรับ " + playerId + ": " + playerNumber + " - ข้ามการโหลด Token");
+            tokenIcon = null;
+            tokenBackIcon = null;
+            return;
+        }
+        
         try {
             String tokenFrontPath = "assets/ui/hud/Token P" + playerNumber + " Front.png";
             String tokenBackPath = "assets/ui/hud/P" + playerNumber + " Back.png";

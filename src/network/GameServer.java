@@ -248,10 +248,14 @@ public class GameServer extends JFrame {
         
         int currentIndex = playerTurnOrder.indexOf(currentTurnPlayer);
         int nextIndex = (currentIndex + 1) % playerTurnOrder.size();
+        String previousPlayer = currentTurnPlayer;
         currentTurnPlayer = playerTurnOrder.get(nextIndex);
         
-        String displayId = playerIdToDisplayId.get(currentTurnPlayer);
-        log("Turn changed to: " + displayId + " (" + currentTurnPlayer + ")");
+        String previousDisplayId = playerIdToDisplayId.get(previousPlayer);
+        String currentDisplayId = playerIdToDisplayId.get(currentTurnPlayer);
+        log("Turn changed from " + previousDisplayId + " to " + currentDisplayId + " (" + currentTurnPlayer + ")");
+        log("Player turn order: " + playerTurnOrder);
+        log("Current index: " + currentIndex + ", Next index: " + nextIndex);
         broadcastTurnChange();
     }
     
@@ -383,6 +387,10 @@ public class GameServer extends JFrame {
                     String playerDisplayId = playerIdToDisplayId.get(msg.playerData.playerId);
                     log("Player " + playerDisplayId + " (" + msg.playerData.playerId + ") completed their turn");
                     nextTurn();
+                } else {
+                    String playerDisplayId = playerIdToDisplayId.get(msg.playerData.playerId);
+                    String currentDisplayId = playerIdToDisplayId.get(currentTurnPlayer);
+                    log("Player " + playerDisplayId + " tried to complete turn, but current turn is " + currentDisplayId);
                 }
                 break;
                 
