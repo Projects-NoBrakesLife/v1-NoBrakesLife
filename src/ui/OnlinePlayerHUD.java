@@ -15,6 +15,7 @@ public class OnlinePlayerHUD {
     private BufferedImage healthIcon;
     private BufferedImage moneyIcon;
     private BufferedImage tokenIcon;
+    private BufferedImage tokenBackIcon;
     private PlayerState playerState;
     private String playerId;
     private int x, y;
@@ -61,11 +62,14 @@ public class OnlinePlayerHUD {
     
     private void loadTokenIcon() {
         try {
-            String tokenPath = "assets/ui/hud/Token P" + playerNumber + " Front.png";
-            tokenIcon = ImageIO.read(new File(tokenPath));
+            String tokenFrontPath = "assets/ui/hud/Token P" + playerNumber + " Front.png";
+            String tokenBackPath = "assets/ui/hud/P" + playerNumber + " Back.png";
+            tokenIcon = ImageIO.read(new File(tokenFrontPath));
+            tokenBackIcon = ImageIO.read(new File(tokenBackPath));
         } catch (IOException e) {
             System.out.println("Could not load token icon for " + playerId + ": " + e.getMessage());
             tokenIcon = null;
+            tokenBackIcon = null;
         }
     }
     
@@ -190,11 +194,12 @@ public class OnlinePlayerHUD {
     }
     
     private void drawTokenIcon(Graphics2D g2d) {
-        if (tokenIcon != null) {
-            int tokenSize = 20;
+        BufferedImage currentTokenIcon = isCurrentTurn ? tokenBackIcon : tokenIcon;
+        if (currentTokenIcon != null) {
+            int tokenSize = isCurrentTurn ? 30 : 20;
             int tokenX = x - tokenSize/2;
             int tokenY = y + mainCircleRadius + 8;
-            g2d.drawImage(tokenIcon, tokenX, tokenY, tokenSize, tokenSize, null);
+            g2d.drawImage(currentTokenIcon, tokenX, tokenY, tokenSize, tokenSize, null);
         }
     }
     
@@ -204,20 +209,13 @@ public class OnlinePlayerHUD {
         g2d.setStroke(new BasicStroke(3));
         g2d.drawOval(x - indicatorSize/2, y - indicatorSize/2, indicatorSize, indicatorSize);
         
-        if (tokenIcon != null) {
-            int tokenSize = 24;
-            int tokenX = x - tokenSize/2;
-            int tokenY = y + mainCircleRadius + 5;
-            g2d.drawImage(tokenIcon, tokenX, tokenY, tokenSize, tokenSize, null);
-        } else {
-            g2d.setColor(Color.YELLOW);
-            g2d.setFont(FontManager.getFontForText("TURN", 8, Font.BOLD));
-            FontMetrics fm = g2d.getFontMetrics();
-            String turnText = "TURN";
-            int textX = x - fm.stringWidth(turnText) / 2;
-            int textY = y + mainCircleRadius + 15;
-            g2d.drawString(turnText, textX, textY);
-        }
+        g2d.setColor(Color.YELLOW);
+        g2d.setFont(FontManager.getFontForText("P" + playerNumber, 12, Font.BOLD));
+        FontMetrics fm = g2d.getFontMetrics();
+        String turnText = "P" + playerNumber;
+        int textX = x - fm.stringWidth(turnText) / 2;
+        int textY = y + mainCircleRadius + 15;
+        g2d.drawString(turnText, textX, textY);
     }
     
     public void setCurrentTurn(boolean isCurrentTurn) {

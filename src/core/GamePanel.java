@@ -60,7 +60,7 @@ public class GamePanel extends JPanel {
         playerState = new PlayerState();
         String characterImagePath = character.getImagePath();
         playerState.setCharacterImagePath(characterImagePath);
-        characterHUD = new ui.CharacterHUD(playerState, 80, 100);
+        characterHUD = new ui.CharacterHUD(playerState, 80, 100, 1);
         onlineHUDManager = new ui.OnlinePlayerHUDManager(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
         networkClient = null;
 
@@ -241,7 +241,6 @@ public class GamePanel extends JPanel {
             onlineHUDManager.drawAll((Graphics2D) g);
         }
         
-        drawTurnIndicator((Graphics2D) g);
 
         if (waitingForPlayers) {
             g.setColor(new Color(0, 0, 0, 150));
@@ -420,8 +419,8 @@ public class GamePanel extends JPanel {
     private Map<String, Point> lastKnownPositions = new HashMap<>();
     private Map<String, Long> lastUpdateTimes = new HashMap<>();
     private long lastPositionUpdate = 0;
-    private static final long POSITION_UPDATE_INTERVAL = 2000;
-    private static final long INDIVIDUAL_UPDATE_INTERVAL = 1500;
+    private static final long POSITION_UPDATE_INTERVAL = 500;
+    private static final long INDIVIDUAL_UPDATE_INTERVAL = 300;
     
     private String currentTurnPlayer = null;
     private boolean isTurnBasedMode = true;
@@ -448,6 +447,9 @@ public class GamePanel extends JPanel {
                 if (onlineHUDManager != null) {
                     onlineHUDManager.updateTurn(currentTurnPlayer);
                 }
+                if (characterHUD != null) {
+                    characterHUD.setCurrentTurn(currentTurnPlayer.equals(myPlayerId));
+                }
             }
         }
     }
@@ -473,6 +475,9 @@ public class GamePanel extends JPanel {
                 
                 if (onlineHUDManager != null) {
                     onlineHUDManager.updateTurn(currentTurnPlayer);
+                }
+                if (characterHUD != null) {
+                    characterHUD.setCurrentTurn(currentTurnPlayer.equals(myPlayerId));
                 }
             }
         }
@@ -585,24 +590,6 @@ public class GamePanel extends JPanel {
         }
         if (characterHUD != null) {
             characterHUD.updatePlayerState(playerState);
-        }
-    }
-    
-    private void drawTurnIndicator(Graphics2D g2d) {
-        if (isTurnBasedMode && currentTurnPlayer != null) {
-            String turnText = "รอบ: " + getPlayerNameById(currentTurnPlayer);
-            if (isMyTurn()) {
-                turnText += " (คุณ)";
-            } else {
-                turnText += " (รอ)";
-            }
-            
-            g2d.setColor(new Color(0, 0, 0, 180));
-            g2d.fillRoundRect(10, 10, 300, 30, 5, 5);
-            
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(FontManager.getFontForText("รอบ", 14, Font.BOLD));
-            g2d.drawString(turnText, 20, 30);
         }
     }
     
