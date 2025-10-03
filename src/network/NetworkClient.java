@@ -18,6 +18,7 @@ public class NetworkClient {
     
     private Map<String, OnlinePlayer> onlinePlayers = new ConcurrentHashMap<>();
     private boolean isConnected = false;
+    private java.util.function.Consumer<String> turnChangeCallback;
     
     public NetworkClient(String playerId, String playerName, Point startPosition, String characterImage) {
         this.myPlayerData = new PlayerData(playerId, playerName, startPosition, characterImage);
@@ -166,6 +167,15 @@ public class NetworkClient {
                     System.out.println("Player left: " + msg.playerData.playerId);
                 }
                 break;
+                
+            case TURN_COMPLETE:
+                System.out.println("Turn complete message received for: " + msg.playerData.playerId);
+                break;
+                
+            case TURN_CHANGE:
+                System.out.println("Turn changed to: " + msg.playerData.playerId);
+                onTurnChanged(msg.playerData.playerId);
+                break;
         }
     }
     
@@ -213,6 +223,23 @@ public class NetworkClient {
         myPlayerData.updateCharacter(characterImagePath);
         if (isConnected) {
             sendMessage(NetworkMessage.createPlayerUpdate(myPlayerData));
+        }
+    }
+    
+    public void sendTurnComplete() {
+        if (isConnected) {
+            sendMessage(NetworkMessage.createTurnComplete(myPlayerData.playerId));
+            System.out.println("Sent turn complete for: " + myPlayerData.playerId);
+        }
+    }
+    
+    public void setTurnChangeCallback(java.util.function.Consumer<String> callback) {
+        this.turnChangeCallback = callback;
+    }
+    
+    private void onTurnChanged(String newTurnPlayerId) {
+        if (turnChangeCallback != null) {
+            turnChangeCallback.accept(newTurnPlayerId);
         }
     }
     
