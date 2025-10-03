@@ -204,17 +204,17 @@ public class OnlinePlayerHUD {
     }
     
     private void drawTurnIndicator(Graphics2D g2d) {
-        int indicatorSize = mainCircleRadius + 10;
-        g2d.setColor(new Color(255, 255, 0, 150));
-        g2d.setStroke(new BasicStroke(3));
+        int indicatorSize = mainCircleRadius + 15;
+        g2d.setColor(new Color(255, 255, 0, 200));
+        g2d.setStroke(new BasicStroke(4));
         g2d.drawOval(x - indicatorSize/2, y - indicatorSize/2, indicatorSize, indicatorSize);
         
         g2d.setColor(Color.YELLOW);
-        g2d.setFont(FontManager.getFontForText("P" + playerNumber, 12, Font.BOLD));
+        g2d.setFont(FontManager.getFontForText("P" + playerNumber, 16, Font.BOLD));
         FontMetrics fm = g2d.getFontMetrics();
         String turnText = "P" + playerNumber;
         int textX = x - fm.stringWidth(turnText) / 2;
-        int textY = y + mainCircleRadius + 15;
+        int textY = y + mainCircleRadius + 20;
         g2d.drawString(turnText, textX, textY);
     }
     

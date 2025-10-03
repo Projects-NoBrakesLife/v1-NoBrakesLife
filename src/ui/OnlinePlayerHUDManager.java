@@ -114,6 +114,13 @@ public class OnlinePlayerHUDManager {
         }
     }
     
+    public void setPlayerNumber(String playerId, int playerNumber) {
+        OnlinePlayerHUD hud = onlineHUDs.get(playerId);
+        if (hud != null) {
+            hud.setPlayerNumber(playerNumber);
+        }
+    }
+    
     public void updateScreenSize(Dimension newSize) {
         this.screenSize = newSize;
         reorganizePositions();

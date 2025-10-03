@@ -60,7 +60,7 @@ public class GamePanel extends JPanel {
         playerState = new PlayerState();
         String characterImagePath = character.getImagePath();
         playerState.setCharacterImagePath(characterImagePath);
-        characterHUD = new ui.CharacterHUD(playerState, 80, 100, 1);
+        characterHUD = new ui.CharacterHUD(playerState, 80, 100);
         onlineHUDManager = new ui.OnlinePlayerHUDManager(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
         networkClient = null;
 
@@ -444,6 +444,8 @@ public class GamePanel extends JPanel {
                 currentTurnPlayer = allPlayerIds.get(0);
                 Debug.log("Turn system initialized. First turn: " + currentTurnPlayer + " (my ID: " + myPlayerId + ")");
                 
+                updatePlayerNumbers(allPlayerIds);
+                
                 if (onlineHUDManager != null) {
                     onlineHUDManager.updateTurn(currentTurnPlayer);
                 }
@@ -472,6 +474,8 @@ public class GamePanel extends JPanel {
                 int nextIndex = (currentIndex + 1) % allPlayerIds.size();
                 currentTurnPlayer = allPlayerIds.get(nextIndex);
                 Debug.log("Next turn: " + currentTurnPlayer + " (my ID: " + myPlayerId + ")");
+                
+                updatePlayerNumbers(allPlayerIds);
                 
                 if (onlineHUDManager != null) {
                     onlineHUDManager.updateTurn(currentTurnPlayer);
@@ -590,6 +594,25 @@ public class GamePanel extends JPanel {
         }
         if (characterHUD != null) {
             characterHUD.updatePlayerState(playerState);
+        }
+    }
+    
+    private void updatePlayerNumbers(java.util.List<String> allPlayerIds) {
+        String myPlayerId = networkClient.getMyPlayerData().playerId;
+        
+        for (int i = 0; i < allPlayerIds.size(); i++) {
+            String playerId = allPlayerIds.get(i);
+            int playerNumber = i + 1;
+            
+            if (playerId.equals(myPlayerId)) {
+                if (characterHUD != null) {
+                    characterHUD.setPlayerNumber(playerNumber);
+                }
+            } else {
+                if (onlineHUDManager != null) {
+                    onlineHUDManager.setPlayerNumber(playerId, playerNumber);
+                }
+            }
         }
     }
     
