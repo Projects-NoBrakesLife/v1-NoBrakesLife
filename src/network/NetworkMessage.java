@@ -16,7 +16,8 @@ public class NetworkMessage implements Serializable {
         PLAYER_LOCATION_CHANGE,
         PLAYER_TIME_UPDATE,
         TURN_COMPLETE,
-        TURN_CHANGE
+        TURN_CHANGE,
+        GAME_STATE_UPDATE
     }
     
     public MessageType type;
@@ -64,6 +65,14 @@ public class NetworkMessage implements Serializable {
     public static NetworkMessage createTurnComplete(String playerId) {
         PlayerData data = new PlayerData(playerId, "", new Point(), "");
         return new NetworkMessage(MessageType.TURN_COMPLETE, data);
+    }
+    
+    public static NetworkMessage createGameStateUpdate(int playerCount, boolean gameStarted, String currentTurnPlayer) {
+        PlayerData data = new PlayerData("", "", new Point(), "");
+        data.playerCount = playerCount;
+        data.gameStarted = gameStarted;
+        data.currentTurnPlayer = currentTurnPlayer;
+        return new NetworkMessage(MessageType.GAME_STATE_UPDATE, data);
     }
     
     public static NetworkMessage createTurnChange(String currentTurnPlayerId) {

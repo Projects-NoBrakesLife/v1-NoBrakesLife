@@ -8,8 +8,8 @@ public class UnifiedDataSync {
     private static UnifiedDataSync instance;
     private final Map<String, PlayerSyncData> playerSyncData = new ConcurrentHashMap<>();
     
-    private static final int UNIFIED_SYNC_INTERVAL = 500;
-    private static final int POSITION_CHANGE_THRESHOLD = 5;
+    private static final int UNIFIED_SYNC_INTERVAL = 200;
+    private static final int POSITION_CHANGE_THRESHOLD = 2;
     private static final int STATS_CHANGE_THRESHOLD = 1;
     
     public static UnifiedDataSync getInstance() {

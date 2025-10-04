@@ -17,6 +17,9 @@ public class PlayerData implements Serializable {
     public int remainingTime;
     public PlayerState.Location currentLocation;
     public long timestamp;
+    public int playerCount;
+    public boolean gameStarted;
+    public String currentTurnPlayer;
     
     public PlayerData(String playerId, String playerName, Point position, String characterImage) {
         this.playerId = playerId;

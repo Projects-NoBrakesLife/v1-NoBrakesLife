@@ -187,6 +187,10 @@ public class NetworkClient {
                 System.out.println("Turn complete message received for: " + msg.playerData.playerId);
                 break;
                 
+            case GAME_STATE_UPDATE:
+                System.out.println("Received game state update: " + msg.playerData.playerCount + " players, game started: " + msg.playerData.gameStarted);
+                break;
+                
             case TURN_CHANGE:
                 System.out.println("Turn changed to: " + msg.playerData.playerId);
                 onTurnChanged(msg.playerData.playerId);
