@@ -198,20 +198,20 @@ public class GameServer extends JFrame {
             } finally {
                 try {
                     String playerId = clientConnections.get(client);
-                        if (playerId != null) {
-                            OnlinePlayer player = onlinePlayers.get(playerId);
-                            if (player != null) {
-                                onlinePlayers.remove(playerId);
-                                dataManager.removePlayer(playerId);
-                                log("Player disconnected: " + playerId + " (" + clientId + ")");
-                                
-                                NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, player.getPlayerData());
-                                broadcastMessage(leaveMsg, null);
-                                updatePlayerCount();
-                                updatePlayerList();
-                            }
-                            clientConnections.remove(client);
+                    if (playerId != null) {
+                        OnlinePlayer player = onlinePlayers.get(playerId);
+                        if (player != null) {
+                            onlinePlayers.remove(playerId);
+                            dataManager.removePlayer(playerId);
+                            log("Player disconnected: " + playerId + " (" + clientId + ")");
+                            
+                            NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, player.getPlayerData());
+                            broadcastMessage(leaveMsg, null);
+                            updatePlayerCount();
+                            updatePlayerList();
                         }
+                        clientConnections.remove(client);
+                    }
                     clientOutputs.remove(client);
                     if (out != null) {
                         out.close();
@@ -293,20 +293,24 @@ public class GameServer extends JFrame {
                         updatePlayerCount();
                         updatePlayerList();
                         
-                        if (currentTurnPlayer == null) {
-                            initializeTurnSystem();
-                        } else {
-                            NetworkMessage turnMsg = NetworkMessage.createTurnChange(currentTurnPlayer);
-                            try {
-                                ObjectOutputStream out = clientOutputs.get(sender);
-                                if (out != null) {
-                                    out.writeObject(turnMsg);
-                                    out.flush();
-                                    log("Sent current turn info to new player: " + displayId);
+                        if (onlinePlayers.size() >= 2) {
+                            if (currentTurnPlayer == null) {
+                                initializeTurnSystem();
+                            } else {
+                                NetworkMessage turnMsg = NetworkMessage.createTurnChange(currentTurnPlayer);
+                                try {
+                                    ObjectOutputStream out = clientOutputs.get(sender);
+                                    if (out != null) {
+                                        out.writeObject(turnMsg);
+                                        out.flush();
+                                        log("Sent current turn info to new player: " + displayId);
+                                    }
+                                } catch (IOException e) {
+                                    log("Error sending turn info to new player: " + e.getMessage());
                                 }
-                            } catch (IOException e) {
-                                log("Error sending turn info to new player: " + e.getMessage());
                             }
+                        } else {
+                            log("Waiting for more players to start turn system (current: " + onlinePlayers.size() + ")");
                         }
                     } else {
                         log("Player " + msg.playerData.playerId + " already exists, updating data");
@@ -389,7 +393,7 @@ public class GameServer extends JFrame {
                     nextTurn();
                 } else {
                     String playerDisplayId = playerIdToDisplayId.get(msg.playerData.playerId);
-                    String currentDisplayId = playerIdToDisplayId.get(currentTurnPlayer);
+                    String currentDisplayId = currentTurnPlayer != null ? playerIdToDisplayId.get(currentTurnPlayer) : "None";
                     log("Player " + playerDisplayId + " tried to complete turn, but current turn is " + currentDisplayId);
                 }
                 break;

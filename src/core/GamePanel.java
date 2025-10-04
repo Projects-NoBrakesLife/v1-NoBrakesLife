@@ -266,7 +266,8 @@ public class GamePanel extends JPanel {
 
     private void showObjectWindow(GameObject obj) {
         if (!isMyTurn()) {
-            Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
+            String currentPlayerName = getPlayerNameById(currentTurnPlayer);
+            Debug.log("❌ ไม่ใช่รอบของคุณ! รอรอบของ: " + currentPlayerName);
             return;
         }
         
@@ -287,7 +288,8 @@ public class GamePanel extends JPanel {
 
     private void moveToLocation(PlayerState.Location targetLocation, GameObject obj) {
         if (!isMyTurn()) {
-            Debug.log("ไม่ใช่รอบของคุณ! รอรอบ: " + getPlayerNameById(currentTurnPlayer));
+            String currentPlayerName = getPlayerNameById(currentTurnPlayer);
+            Debug.log("❌ ไม่ใช่รอบของคุณ! รอรอบของ: " + currentPlayerName);
             return;
         }
         
@@ -323,7 +325,8 @@ public class GamePanel extends JPanel {
 
     private void startMovement(java.util.List<Point> path, PlayerState.Location targetLocation, GameObject obj) {
         if (!isMyTurn()) {
-            Debug.log("Not your turn! Current turn: " + currentTurnPlayer);
+            String currentPlayerName = getPlayerNameById(currentTurnPlayer);
+            Debug.log("❌ ไม่ใช่รอบของคุณ! รอรอบของ: " + currentPlayerName);
             return;
         }
         
@@ -349,7 +352,7 @@ public class GamePanel extends JPanel {
                     }
                 }
                 
-                if (networkClient != null) {
+                if (networkClient != null && currentPathIndex % 3 == 0) {
                     networkClient.sendPlayerLocationChange(playerState.getCurrentLocation());
                 }
                 
@@ -370,6 +373,7 @@ public class GamePanel extends JPanel {
         showWindowForLocation(targetLocation);
         
         if (isTurnBasedMode && isMyTurn()) {
+            Debug.log("🎯 เสร็จสิ้นการเดิน - ส่งเทิร์นเสร็จสิ้น");
             sendTurnCompleteToServer();
         }
     }
@@ -404,12 +408,14 @@ public class GamePanel extends JPanel {
     private Map<String, Point> lastKnownPositions = new HashMap<>();
     private Map<String, Long> lastUpdateTimes = new HashMap<>();
     private long lastPositionUpdate = 0;
-    private static final long POSITION_UPDATE_INTERVAL = 500;
-    private static final long INDIVIDUAL_UPDATE_INTERVAL = 300;
+    private static final long POSITION_UPDATE_INTERVAL = 50;
+    private static final long INDIVIDUAL_UPDATE_INTERVAL = 16;
     
     
     private String currentTurnPlayer = null;
     private boolean isTurnBasedMode = true;
+    private long turnPopupStartTime = 0;
+    private static final long TURN_POPUP_DURATION = 2000; 
     
     private network.OnlineDataManager dataManager = new network.OnlineDataManagerImpl();
     
@@ -555,6 +561,8 @@ public class GamePanel extends JPanel {
     
     private void onTurnChanged(String newTurnPlayerId) {
         currentTurnPlayer = newTurnPlayerId;
+        turnPopupStartTime = System.currentTimeMillis(); 
+        
         String playerName = getPlayerNameById(newTurnPlayerId);
         Debug.log("🎯 เทิร์นเปลี่ยนเป็น: " + playerName + " (" + newTurnPlayerId + ")");
         
@@ -562,13 +570,12 @@ public class GamePanel extends JPanel {
         
         String myPlayerId = networkClient.getMyPlayerData().playerId;
         if (newTurnPlayerId.equals(myPlayerId)) {
-            Debug.log("✅ ตอนนี้เป็นเทิร์นของคุณแล้ว!");
+            Debug.log("✅ ตอนนี้เป็นเทิร์นของคุณแล้ว! คุณสามารถเดินได้");
         } else {
-            Debug.log("⏳ รอเทิร์นของ: " + playerName);
+            Debug.log("⏳ รอเทิร์นของ: " + playerName + " - คุณไม่สามารถเดินได้");
         }
         
-        // ไม่แสดง popup notification เพื่อลดความรบกวน
-        Debug.log("🔄 แสดงการแจ้งเตือนเทิร์น: " + playerName + " (" + newTurnPlayerId + ")");
+        repaint();
     }
     
     
@@ -610,7 +617,52 @@ public class GamePanel extends JPanel {
     }
     
     private void drawTurnPopup(Graphics2D g2d) {
-        // ไม่แสดง popup เพื่อลดความรบกวน
+        if (currentTurnPlayer == null || networkClient == null) return;
+        
+        long currentTime = System.currentTimeMillis();
+        long elapsedTime = currentTime - turnPopupStartTime;
+     
+        if (elapsedTime > TURN_POPUP_DURATION) return;
+  
+        float alpha = 1.0f - (float) elapsedTime / TURN_POPUP_DURATION;
+        alpha = Math.max(0.0f, Math.min(1.0f, alpha));
+        
+        String myPlayerId = networkClient.getMyPlayerData().playerId;
+        boolean isMyTurn = currentTurnPlayer.equals(myPlayerId);
+        
+        int turnPlayerNumber = 1;
+        if (networkClient != null) {
+            java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
+            allPlayerIds.add(myPlayerId);
+            allPlayerIds.addAll(networkClient.getOnlinePlayers().keySet());
+            java.util.Collections.sort(allPlayerIds);
+            
+            int index = allPlayerIds.indexOf(currentTurnPlayer);
+            if (index >= 0) {
+                turnPlayerNumber = index + 1;
+            }
+        }
+        
+        int centerX = Config.GAME_WIDTH / 2;
+        int centerY = Config.GAME_HEIGHT / 2;
+        int tokenSize = 200; 
+        
+       
+        g2d.setColor(new Color(0, 0, 0, (int)(180 * alpha)));
+        g2d.fillRect(0, 0, Config.GAME_WIDTH, Config.GAME_HEIGHT);
+        
+        try {
+            String tokenPath = "assets/ui/hud/Token P" + turnPlayerNumber + " Front.png";
+            java.awt.image.BufferedImage tokenIcon = javax.imageio.ImageIO.read(new java.io.File(tokenPath));
+            
+            if (tokenIcon != null) {
+                g2d.drawImage(tokenIcon, centerX - tokenSize/2, centerY - tokenSize/2, tokenSize, tokenSize, null);
+
+            }
+        } catch (Exception e) {
+            g2d.setColor(new Color(isMyTurn ? 0 : 255, isMyTurn ? 255 : 255, 0, (int)(200 * alpha)));
+            g2d.fillOval(centerX - tokenSize/2, centerY - tokenSize/2, tokenSize, tokenSize);
+        }
     }
     
     private String getPlayerNameById(String playerId) {
@@ -715,7 +767,7 @@ public class GamePanel extends JPanel {
     }
     
     private void showInitialTurnPopup() {
-        // ไม่แสดง popup ในหน้ารอผู้เล่น
+ 
         Debug.log("🚀 เกมเริ่มแล้ว - ไม่แสดง popup เทิร์นแรก");
     }
 }

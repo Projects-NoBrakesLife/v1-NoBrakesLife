@@ -291,9 +291,11 @@ public class NetworkClient {
             dialog.setFont(util.FontManager.getFontForText("Connection Error", 14));
             dialog.setVisible(true);
             
-            new javax.swing.Timer(10000, e -> {
+            javax.swing.Timer timer = new javax.swing.Timer(10000, e -> {
                 System.exit(0);
-            }).start();
+            });
+            timer.setRepeats(false);
+            timer.start();
         });
     }
 }
