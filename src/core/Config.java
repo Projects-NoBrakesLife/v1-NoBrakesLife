@@ -18,7 +18,7 @@ public class Config {
     public static final int UI_OFFSET_Y = 50;
     
     // การตั้งค่าเกม
-    public static final int MIN_PLAYERS_TO_START = 2;
+    public static final int MIN_PLAYERS_TO_START = 3;
 
     // ตำแหน่งของอาคารต่างๆ
     public static final Point APARTMENT_POINT = new Point(779, 250);
@@ -101,7 +101,10 @@ public class Config {
     public static final long SOUND_MIN_PLAY_INTERVAL = 100;
     
     // การตั้งค่าเครือข่าย
-    public static final int NETWORK_UPDATE_INTERVAL = 8;
+    public static final int NETWORK_UPDATE_INTERVAL = 200; // เพิ่มจาก 100 เป็น 200 เพื่อลดการส่งข้อมูล
+    public static final int NETWORK_POSITION_UPDATE_INTERVAL = 300; // เพิ่มจาก 200 เป็น 300
+    public static final int NETWORK_STATS_UPDATE_INTERVAL = 800; // เพิ่มจาก 500 เป็น 800
+    public static final int NETWORK_TIME_UPDATE_INTERVAL = 1500; // เพิ่มจาก 1000 เป็น 1500
     
     // การตั้งค่าการเคลื่อนไหว
     public static final int MOVEMENT_TIMER_INTERVAL = 8;

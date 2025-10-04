@@ -202,7 +202,10 @@ public class NetworkClient {
                 if (isConnected) {
                     sendMessage(NetworkMessage.createPlayerMove(myPlayerData.playerId, newPosition));
                     dataManager.updatePlayerPosition("localPlayer", newPosition);
-                    System.out.println("Sent position update: " + newPosition);
+             
+                    if (System.currentTimeMillis() % 2000 < 100) {
+                        System.out.println("Sent position update: " + newPosition);
+                    }
                 }
             }
         }
@@ -232,7 +235,11 @@ public class NetworkClient {
         myPlayerData.updateTime(remainingTime);
         if (isConnected) {
             sendMessage(NetworkMessage.createPlayerTimeUpdate(myPlayerData.playerId, remainingTime));
-            System.out.println("ส่งข้อมูลเวลา: " + remainingTime + " ชั่วโมง สำหรับ " + myPlayerData.playerId);
+    
+
+            if (System.currentTimeMillis() % 5000 < 100) {
+                System.out.println("ส่งข้อมูลเวลา: " + remainingTime + " ชั่วโมง สำหรับ " + myPlayerData.playerId);
+            }
         }
     }
     

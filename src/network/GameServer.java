@@ -293,29 +293,28 @@ public class GameServer extends JFrame {
                         updatePlayerCount();
                         updatePlayerList();
                         
-                        if (onlinePlayers.size() >= 2) {
+                        if (onlinePlayers.size() >= core.Config.MIN_PLAYERS_TO_START) {
                             if (currentTurnPlayer == null) {
                                 initializeTurnSystem();
-                            } else {
-                                NetworkMessage turnMsg = NetworkMessage.createTurnChange(currentTurnPlayer);
-                                try {
-                                    ObjectOutputStream out = clientOutputs.get(sender);
-                                    if (out != null) {
-                                        out.writeObject(turnMsg);
-                                        out.flush();
-                                        log("Sent current turn info to new player: " + displayId);
-                                    }
-                                } catch (IOException e) {
-                                    log("Error sending turn info to new player: " + e.getMessage());
-                                }
                             }
-                        } else {
-                            log("Waiting for more players to start turn system (current: " + onlinePlayers.size() + ")");
+                            NetworkMessage turnMsg = NetworkMessage.createTurnChange(currentTurnPlayer);
+                            try {
+                                ObjectOutputStream out = clientOutputs.get(sender);
+                                if (out != null) {
+                                    out.writeObject(turnMsg);
+                                    out.flush();
+                                }
+                            } catch (IOException e) {
+                                log("Error sending turn info to new player: " + e.getMessage());
+                            }
                         }
                     } else {
-                        log("Player " + msg.playerData.playerId + " already exists, updating data");
+                        log("Player " + msg.playerData.playerId + " already exists, updating character image");
                         OnlinePlayer existingPlayer = onlinePlayers.get(msg.playerData.playerId);
-                        existingPlayer.updateFromPlayerData(msg.playerData);
+                        if (existingPlayer != null && !existingPlayer.getCharacterImage().equals(msg.playerData.characterImage)) {
+                            existingPlayer.updateCharacterImage(msg.playerData.characterImage);
+                            log("Updated character image for " + msg.playerData.playerId + " to " + msg.playerData.characterImage);
+                        }
                         broadcastMessage(msg, sender);
                     }
                 }
@@ -352,7 +351,10 @@ public class GameServer extends JFrame {
                     if (dataManager.shouldUpdateStats(msg.playerData.playerId, msg.playerData.money, msg.playerData.health, msg.playerData.energy)) {
                         statsPlayer.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
                         dataManager.updatePlayerStats(msg.playerData.playerId, msg.playerData.money, msg.playerData.health, msg.playerData.energy);
-                        log("Player stats updated: " + msg.playerData.playerId);
+                       
+                        if (System.currentTimeMillis() % 3000 < 100) {
+                            log("Player stats updated: " + msg.playerData.playerId);
+                        }
                         broadcastMessage(msg, sender);
                     }
                 } else {
@@ -376,7 +378,10 @@ public class GameServer extends JFrame {
                 OnlinePlayer timePlayer = onlinePlayers.get(msg.playerData.playerId);
                 if (timePlayer != null) {
                     timePlayer.updateTime(msg.playerData.remainingTime);
-                    log("Player time updated: " + msg.playerData.playerId + " to " + msg.playerData.remainingTime + " hours");
+                   
+                    if (System.currentTimeMillis() % 5000 < 100) {
+                        log("Player time updated: " + msg.playerData.playerId + " to " + msg.playerData.remainingTime + " hours");
+                    }
                     broadcastMessage(msg, sender);
                 } else {
                     log("Player not found for time update: " + msg.playerData.playerId);
@@ -452,12 +457,12 @@ public class GameServer extends JFrame {
             int playerCount = onlinePlayers.size();
             playerCountLabel.setText("Players: " + playerCount);
             
-            if (playerCount >= 4) {
-                waitingLabel.setText("Ready to start! (4/4)");
+            if (playerCount >= core.Config.MIN_PLAYERS_TO_START) {
+                waitingLabel.setText("Ready to start! (" + playerCount + "/" + core.Config.MIN_PLAYERS_TO_START + ")");
                 waitingLabel.setForeground(Color.GREEN);
                 gameStarted = true;
             } else {
-                waitingLabel.setText("Waiting for players... (" + playerCount + "/4)");
+                waitingLabel.setText("Waiting for players... (" + playerCount + "/" + core.Config.MIN_PLAYERS_TO_START + ")");
                 waitingLabel.setForeground(Color.ORANGE);
                 gameStarted = false;
             }
