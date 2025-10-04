@@ -186,7 +186,7 @@ public class GamePanel extends JPanel {
         
         networkClient.connect();
         
-        javax.swing.Timer connectionTimer = new javax.swing.Timer(500, e -> {
+        javax.swing.Timer connectionTimer = new javax.swing.Timer(100, e -> {
             if (networkClient.isConnected()) {
                 gameStateManager.addPlayer(playerId, Lang.DEFAULT_PLAYER_NAME, selectedImage);
                 startNetworkTimers();
@@ -197,24 +197,24 @@ public class GamePanel extends JPanel {
     }
     
     private void startNetworkTimers() {
-        javax.swing.Timer initialUpdateTimer = new javax.swing.Timer(1000, e -> {
+        javax.swing.Timer initialUpdateTimer = new javax.swing.Timer(100, e -> {
             networkClient.sendPlayerUpdate();
             ((javax.swing.Timer) e.getSource()).stop();
         });
         initialUpdateTimer.start();
 
-        javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, _ -> {
+        javax.swing.Timer networkTimer = new javax.swing.Timer(100, _ -> {
             updateOnlinePlayers();
             checkPlayerCount();
         });
         networkTimer.start();
         
-        javax.swing.Timer unifiedSyncTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, _ -> {
+        javax.swing.Timer unifiedSyncTimer = new javax.swing.Timer(200, _ -> {
             syncPlayerDataUnified();
         });
         unifiedSyncTimer.start();
         
-        waitingTimer = new javax.swing.Timer(2000, _ -> {
+        waitingTimer = new javax.swing.Timer(500, _ -> {
             checkPlayerCount();
         });
         waitingTimer.start();
@@ -624,8 +624,9 @@ public class GamePanel extends JPanel {
     }
     
     private void onTurnChanged(String newTurnPlayerId) {
-  
         gameStateManager.nextTurn();
+        
+        turnPopupStartTime = System.currentTimeMillis();
         
         String playerName = getPlayerNameById(newTurnPlayerId);
         Debug.log("🎯 เทิร์นเปลี่ยนเป็น: " + playerName + " (" + newTurnPlayerId + ")");
@@ -729,6 +730,17 @@ public class GamePanel extends JPanel {
             g2d.setColor(new Color(isMyTurn ? 0 : 255, isMyTurn ? 255 : 255, 0, (int)(200 * alpha)));
             g2d.fillOval(centerX - tokenSize/2, centerY - tokenSize/2, tokenSize, tokenSize);
         }
+        
+        String playerName = getPlayerNameById(currentTurnPlayer);
+        String turnText = isMyTurn ? "เทิร์นของคุณ!" : "เทิร์นของ " + playerName;
+        
+        g2d.setColor(new Color(255, 255, 255, (int)(255 * alpha)));
+        g2d.setFont(FontManager.getSmartThaiFont(24, Font.BOLD));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(turnText);
+        int textX = centerX - textWidth / 2;
+        int textY = centerY + tokenSize/2 + 40;
+        g2d.drawString(turnText, textX, textY);
     }
     
     private String getPlayerNameById(String playerId) {
@@ -778,8 +790,7 @@ public class GamePanel extends JPanel {
     }
     
     private void showInitialTurnPopup() {
- 
-        Debug.log("🚀 เกมเริ่มแล้ว - ไม่แสดง popup เทิร์นแรก");
+        turnPopupStartTime = System.currentTimeMillis();
     }
     
     private void checkTimeExpired() {

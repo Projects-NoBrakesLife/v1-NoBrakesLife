@@ -293,6 +293,17 @@ public class GameServer extends JFrame {
                         updatePlayerCount();
                         updatePlayerList();
                         
+                        NetworkMessage gameStateMsg = NetworkMessage.createGameStateUpdate(onlinePlayers.size(), gameStarted, currentTurnPlayer);
+                        try {
+                            ObjectOutputStream out = clientOutputs.get(sender);
+                            if (out != null) {
+                                out.writeObject(gameStateMsg);
+                                out.flush();
+                            }
+                        } catch (IOException e) {
+                            log("Error sending game state to new player: " + e.getMessage());
+                        }
+                        
                         if (onlinePlayers.size() >= core.Config.MIN_PLAYERS_TO_START) {
                             if (currentTurnPlayer == null) {
                                 initializeTurnSystem();
