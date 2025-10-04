@@ -101,10 +101,10 @@ public class Config {
     public static final long SOUND_MIN_PLAY_INTERVAL = 100;
     
     // การตั้งค่าเครือข่าย
-    public static final int NETWORK_UPDATE_INTERVAL = 16;
+    public static final int NETWORK_UPDATE_INTERVAL = 8;
     
     // การตั้งค่าการเคลื่อนไหว
-    public static final int MOVEMENT_TIMER_INTERVAL = 16;
+    public static final int MOVEMENT_TIMER_INTERVAL = 8;
     public static final double HOVER_SCALE = 1.05;
     
     // การตั้งค่าขนาดตัวละคร
@@ -142,4 +142,9 @@ public class Config {
     public static final int BUTTON_WIDTH_REST = 200;
     public static final int BUTTON_HEIGHT_REST = 70;
     public static final int BUTTON_MARGIN_REST = 120;
+    
+    // การตั้งค่าระบบเวลา
+    public static final int TURN_TIME_HOURS = 24;
+    public static final int TIME_PER_MOVEMENT = 10;
+    public static final int TIME_DISPLAY_FONT_SIZE = 20;
 }

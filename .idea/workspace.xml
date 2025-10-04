@@ -11,9 +11,10 @@
       <change beforePath="$PROJECT_DIR$/src/core/PlayerState.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/PlayerState.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/network/GameServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/GameServer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/network/NetworkClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/NetworkClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/network/NetworkMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/NetworkMessage.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/network/OnlineDataManagerImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/OnlineDataManagerImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui/CharacterHUD.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/CharacterHUD.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui/OnlinePlayerHUD.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/OnlinePlayerHUD.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/network/OnlinePlayer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/OnlinePlayer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/network/PlayerData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/PlayerData.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,7 +58,7 @@
       <recent name="C:\Users\uSeR\Documents\GitHub\v1-NoBrakesLife\assets\ui" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.Play4">
+  <component name="RunManager" selected="Application.Play3">
     <configuration name="Dev" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="ui.MapEditorUI" />
       <module name="v1-NoBrakesLife" />

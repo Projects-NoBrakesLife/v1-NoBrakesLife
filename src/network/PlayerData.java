@@ -14,6 +14,7 @@ public class PlayerData implements Serializable {
     public int money;
     public int health;
     public int energy;
+    public int remainingTime;
     public PlayerState.Location currentLocation;
     public long timestamp;
     
@@ -25,6 +26,7 @@ public class PlayerData implements Serializable {
         this.money = 1000;
         this.health = 100;
         this.energy = 100;
+        this.remainingTime = 24;
         this.currentLocation = PlayerState.Location.APARTMENT_SHITTY;
         this.timestamp = System.currentTimeMillis();
     }
@@ -38,6 +40,7 @@ public class PlayerData implements Serializable {
         this.money = money;
         this.health = health;
         this.energy = energy;
+        this.remainingTime = 24;
         this.currentLocation = location;
         this.timestamp = System.currentTimeMillis();
     }
@@ -54,6 +57,11 @@ public class PlayerData implements Serializable {
         this.timestamp = System.currentTimeMillis();
     }
     
+    public void updateTime(int remainingTime) {
+        this.remainingTime = remainingTime;
+        this.timestamp = System.currentTimeMillis();
+    }
+    
     public void updateLocation(PlayerState.Location location) {
         this.currentLocation = location;
         this.timestamp = System.currentTimeMillis();
@@ -65,7 +73,9 @@ public class PlayerData implements Serializable {
     }
     
     public PlayerData copy() {
-        return new PlayerData(playerId, playerName, position, characterImage, 
+        PlayerData copy = new PlayerData(playerId, playerName, position, characterImage, 
                             money, health, energy, currentLocation);
+        copy.remainingTime = this.remainingTime;
+        return copy;
     }
 }

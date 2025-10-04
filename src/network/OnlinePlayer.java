@@ -51,6 +51,10 @@ public class OnlinePlayer implements Serializable {
         return playerData.energy;
     }
     
+    public int getRemainingTime() {
+        return playerData.remainingTime;
+    }
+    
     public PlayerState.Location getCurrentLocation() {
         return playerData.currentLocation;
     }
@@ -80,6 +84,11 @@ public class OnlinePlayer implements Serializable {
     
     public void updateCharacter(String characterImage) {
         playerData.updateCharacter(characterImage);
+        updateLastSeen();
+    }
+    
+    public void updateTime(int remainingTime) {
+        playerData.updateTime(remainingTime);
         updateLastSeen();
     }
     
