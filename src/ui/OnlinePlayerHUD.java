@@ -202,12 +202,23 @@ public class OnlinePlayerHUD {
     }
     
     private void drawTokenIcon(Graphics2D g2d) {
+        if (playerNumber <= 0) return;
+        
         BufferedImage currentTokenIcon = isCurrentTurn ? tokenBackIcon : tokenIcon;
         if (currentTokenIcon != null) {
             int tokenSize = isCurrentTurn ? 30 : 20;
             int tokenX = x - tokenSize/2;
             int tokenY = y + mainCircleRadius + 8;
             g2d.drawImage(currentTokenIcon, tokenX, tokenY, tokenSize, tokenSize, null);
+            
+   
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Arial", Font.BOLD, 10));
+            FontMetrics fm = g2d.getFontMetrics();
+            String playerText = "P" + playerNumber;
+            int textX = tokenX + (tokenSize - fm.stringWidth(playerText)) / 2;
+            int textY = tokenY + tokenSize/2 + fm.getAscent()/2;
+            g2d.drawString(playerText, textX, textY);
         }
     }
     

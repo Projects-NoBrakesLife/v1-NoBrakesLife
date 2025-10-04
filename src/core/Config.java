@@ -101,7 +101,7 @@ public class Config {
     public static final long SOUND_MIN_PLAY_INTERVAL = 100;
     
     // การตั้งค่าเครือข่าย
-    public static final int NETWORK_UPDATE_INTERVAL = 50;
+    public static final int NETWORK_UPDATE_INTERVAL = 16;
     
     // การตั้งค่าการเคลื่อนไหว
     public static final int MOVEMENT_TIMER_INTERVAL = 16;

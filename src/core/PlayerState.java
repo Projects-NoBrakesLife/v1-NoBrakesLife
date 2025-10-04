@@ -10,7 +10,6 @@ public class PlayerState {
         JOB_OFFICE,
         CULTURE,
         UNIVERSITY
-     
     }
 
     private Location currentLocation;
