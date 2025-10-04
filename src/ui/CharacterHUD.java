@@ -1,6 +1,5 @@
 package ui;
 
-import core.Lang;
 import core.PlayerState;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -48,7 +47,6 @@ public class CharacterHUD {
             healthIcon = ImageIO.read(new File("assets/ui/hud/Icon Health.png"));
             moneyIcon = ImageIO.read(new File("assets/ui/hud/Icon Money #6805.png"));
             loadTokenIcon();
-            loadCharacterIcon();
         } catch (IOException e) {
             System.out.println("Could not load HUD icons: " + e.getMessage());
             createFallbackIcons();
@@ -81,8 +79,11 @@ public class CharacterHUD {
             String characterImagePath = playerState.getCharacterImagePath();
             if (characterImagePath != null && !characterImagePath.isEmpty()) {
                 characterIcon = ImageIO.read(new File(characterImagePath));
+                System.out.println("โหลดรูปตัวละครสำเร็จ: " + characterImagePath);
             } else {
-                characterIcon = ImageIO.read(new File(Lang.MALE_01));
+               
+                characterIcon = null;
+                System.out.println("ยังไม่ได้เลือกตัวละคร - ไม่โหลดรูป");
             }
         } catch (IOException e) {
             System.out.println("Could not load character icon: " + e.getMessage());
@@ -223,6 +224,10 @@ public class CharacterHUD {
     public void setPosition(int x, int y) {
         this.x = x;
         this.y = y;
+    }
+    
+    public void loadCharacterIconNow() {
+        loadCharacterIcon();
     }
     
     public void updatePlayerState(PlayerState newState) {

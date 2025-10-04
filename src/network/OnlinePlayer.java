@@ -92,6 +92,11 @@ public class OnlinePlayer implements Serializable {
         updateLastSeen();
     }
     
+    public void updateCharacterImage(String characterImage) {
+        playerData.updateCharacter(characterImage);
+        lastSeen = System.currentTimeMillis();
+    }
+    
     public void updateFromPlayerData(PlayerData newData) {
         this.playerData = newData.copy();
         updateLastSeen();
