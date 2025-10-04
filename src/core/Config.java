@@ -5,22 +5,17 @@ import java.util.List;
 
 
 public class Config {
-    // ขนาดหน้าจอเกม
     public static final int GAME_WIDTH = 1600;
     public static final int GAME_HEIGHT = 900;
     
-    // การตั้งค่าพื้นหลัง
     public static final int BG_OFFSET_Y = -150;
     public static final boolean BG_STRETCH = true;
 
-    // การตั้งค่า UI
     public static final double UI_SCALE = 0.3;
     public static final int UI_OFFSET_Y = 50;
     
-    // การตั้งค่าเกม
     public static final int MIN_PLAYERS_TO_START = 3;
 
-    // ตำแหน่งของอาคารต่างๆ
     public static final Point APARTMENT_POINT = new Point(779, 250);
     public static final Point BANK_POINT = new Point(1202, 480);
     public static final Point TECH_POINT = new Point(1242, 606);
@@ -28,7 +23,6 @@ public class Config {
     public static final Point CULTURE_POINT = new Point(769, 583);
     public static final Point UNIVERSITY_POINT = new Point(539, 626);
 
-    // เส้นทางสำหรับการเดิน
     public static final List<Point> ROAD_POINTS = List.of(
         new Point(781, 253),
         new Point(854, 251),
@@ -92,38 +86,30 @@ public class Config {
         new Point(772, 249)
     );
     
-    // การตั้งค่าฟอนต์
     public static final String FONT_PATH_THAI = "./assets/font/Arabica.ttf";
     public static final String FONT_PATH_ENGLISH = "./assets/font/GoodDog_New.otf";
     public static final String DEFAULT_FONT_NAME = "SansSerif";
     
-    // การตั้งค่าเสียง
     public static final long SOUND_MIN_PLAY_INTERVAL = 100;
     
-    // การตั้งค่าเครือข่าย
-    public static final int NETWORK_UPDATE_INTERVAL = 200; // เพิ่มจาก 100 เป็น 200 เพื่อลดการส่งข้อมูล
-    public static final int NETWORK_POSITION_UPDATE_INTERVAL = 300; // เพิ่มจาก 200 เป็น 300
-    public static final int NETWORK_STATS_UPDATE_INTERVAL = 800; // เพิ่มจาก 500 เป็น 800
-    public static final int NETWORK_TIME_UPDATE_INTERVAL = 1500; // เพิ่มจาก 1000 เป็น 1500
+    public static final int NETWORK_UPDATE_INTERVAL = 200; 
+    public static final int NETWORK_POSITION_UPDATE_INTERVAL = 300;
+    public static final int NETWORK_STATS_UPDATE_INTERVAL = 800; 
+    public static final int NETWORK_TIME_UPDATE_INTERVAL = 1500; 
     
-    // การตั้งค่าการเคลื่อนไหว
     public static final int MOVEMENT_TIMER_INTERVAL = 8;
     public static final double HOVER_SCALE = 1.05;
     
-    // การตั้งค่าขนาดตัวละคร
     public static final int CHARACTER_WIDTH = 64;
     public static final int CHARACTER_HEIGHT = 64;
     
-    // การตั้งค่าเงินเริ่มต้น
     public static final int STARTING_MONEY = 1000;
     public static final int STARTING_HEALTH = 100;
     public static final int STARTING_ENERGY = 100;
     
-    // การตั้งค่าการพักผ่อน
     public static final int REST_HEALTH_GAIN = 20;
     public static final int REST_ENERGY_GAIN = 30;
     
-    // การตั้งค่าขนาดข้อความ
     public static final int FONT_SIZE_TITLE = 24;
     public static final int FONT_SIZE_BUTTON = 16;
     public static final int FONT_SIZE_SMALL = 12;
@@ -131,7 +117,6 @@ public class Config {
     public static final int FONT_SIZE_LARGE = 20;
     public static final int FONT_SIZE_EXTRA_LARGE = 36;
     
-    // การตั้งค่าขนาดหน้าต่าง
     public static final int WINDOW_WIDTH_APARTMENT = 1280;
     public static final int WINDOW_HEIGHT_APARTMENT = 720;
     public static final int WINDOW_WIDTH_DEFAULT = 600;
@@ -141,12 +126,10 @@ public class Config {
     public static final int WINDOW_WIDTH_SMALL = 400;
     public static final int WINDOW_HEIGHT_SMALL = 300;
     
-    // การตั้งค่าขนาดปุ่ม
     public static final int BUTTON_WIDTH_REST = 200;
     public static final int BUTTON_HEIGHT_REST = 70;
     public static final int BUTTON_MARGIN_REST = 120;
     
-    // การตั้งค่าระบบเวลา
     public static final int TURN_TIME_HOURS = 24;
     public static final int TIME_PER_MOVEMENT = 10;
     public static final int TIME_DISPLAY_FONT_SIZE = 20;

@@ -1,5 +1,6 @@
 package network;
 
+import core.CoreDataManager;
 import core.PlayerState;
 import java.awt.Point;
 import java.io.*;
@@ -16,17 +17,22 @@ public class NetworkClient {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     
-    private Map<String, OnlinePlayer> onlinePlayers = new ConcurrentHashMap<>();
+    private Map<String, PlayerData> onlinePlayers = new ConcurrentHashMap<>();
     private boolean isConnected = false;
     private java.util.function.Consumer<String> turnChangeCallback;
+    private String currentTurnPlayer;
+    
+    private CoreDataManager coreDataManager;
     
     public NetworkClient(String playerId, String playerName, Point startPosition, String characterImage) {
         this.myPlayerData = new PlayerData(playerId, playerName, startPosition, characterImage);
+        this.coreDataManager = CoreDataManager.getInstance();
         System.out.println("NetworkClient created for: " + playerName + " with character: " + characterImage);
     }
     
     public NetworkClient(PlayerData playerData) {
         this.myPlayerData = playerData.copy();
+        this.coreDataManager = CoreDataManager.getInstance();
     }
     
     public void connect() {
@@ -89,8 +95,6 @@ public class NetworkClient {
         }).start();
     }
     
-    private OnlineDataManager dataManager = new OnlineDataManagerImpl();
-    
     private void handleMessage(NetworkMessage msg) {
         if (msg == null || msg.playerData == null) {
             System.out.println("Received null message or playerData");
@@ -100,24 +104,21 @@ public class NetworkClient {
         switch (msg.type) {
             case PLAYER_JOIN:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    OnlinePlayer newPlayer = new OnlinePlayer(msg.playerData);
+                    PlayerData newPlayer = msg.playerData.copy();
                     onlinePlayers.put(msg.playerData.playerId, newPlayer);
-                    dataManager.updatePlayerPosition(msg.playerData.playerId, msg.playerData.position);
-                    dataManager.updatePlayerLocation(msg.playerData.playerId, msg.playerData.currentLocation);
-                    System.out.println("Player joined: " + msg.playerData.playerName + " (" + msg.playerData.playerId + ") at " + msg.playerData.position + " Character: " + msg.playerData.characterImage);
+                    System.out.println("Player joined: " + msg.playerData.playerName + " (" + msg.playerData.playerId + ") at " + msg.playerData.position);
                     System.out.println("Total online players: " + onlinePlayers.size());
                 }
                 break;
                 
             case PLAYER_MOVE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
                     if (player != null) {
-                        Point currentPos = player.getPosition();
+                        Point currentPos = player.position;
                         Point newPos = msg.playerData.position;
                         if (currentPos == null || !currentPos.equals(newPos)) {
                             player.updatePosition(newPos);
-                            dataManager.updatePlayerPosition(msg.playerData.playerId, newPos);
                             System.out.println("Received position update from server: " + msg.playerData.playerId + " to " + newPos);
                         }
                     }
@@ -126,9 +127,15 @@ public class NetworkClient {
                 
             case PLAYER_UPDATE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
                     if (player != null) {
-                        player.updateFromPlayerData(msg.playerData);
+                        player.money = msg.playerData.money;
+                        player.health = msg.playerData.health;
+                        player.energy = msg.playerData.energy;
+                        player.remainingTime = msg.playerData.remainingTime;
+                        player.position = msg.playerData.position;
+                        player.currentLocation = msg.playerData.currentLocation;
+                        player.characterImage = msg.playerData.characterImage;
                         System.out.println("Player updated: " + msg.playerData.playerId);
                     }
                 }
@@ -136,26 +143,20 @@ public class NetworkClient {
                 
             case PLAYER_STATS_UPDATE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
                     if (player != null) {
-                        if (dataManager.shouldUpdateStats(msg.playerData.playerId, msg.playerData.money, msg.playerData.health, msg.playerData.energy)) {
-                            player.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
-                            dataManager.updatePlayerStats(msg.playerData.playerId, msg.playerData.money, msg.playerData.health, msg.playerData.energy);
-                            System.out.println("Player stats updated: " + msg.playerData.playerId);
-                        }
+                        player.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
+                        System.out.println("Player stats updated: " + msg.playerData.playerId);
                     }
                 }
                 break;
                 
             case PLAYER_LOCATION_CHANGE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
                     if (player != null) {
-                        if (dataManager.shouldUpdateLocation(msg.playerData.playerId, msg.playerData.currentLocation)) {
-                            player.updateLocation(msg.playerData.currentLocation);
-                            dataManager.updatePlayerLocation(msg.playerData.playerId, msg.playerData.currentLocation);
-                            System.out.println("Player location changed: " + msg.playerData.playerId + " to " + msg.playerData.currentLocation);
-                        }
+                        player.updateLocation(msg.playerData.currentLocation);
+                        System.out.println("Player location changed: " + msg.playerData.playerId + " to " + msg.playerData.currentLocation);
                     }
                 }
                 break;
@@ -163,7 +164,7 @@ public class NetworkClient {
             case PLAYER_TIME_UPDATE:
                 System.out.println("รับข้อความ PLAYER_TIME_UPDATE จาก: " + msg.playerData.playerId + " เวลา: " + msg.playerData.remainingTime + " ชั่วโมง");
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
                     if (player != null) {
                         player.updateTime(msg.playerData.remainingTime);
                         System.out.println("อัปเดตเวลาผู้เล่น: " + msg.playerData.playerId + " เป็น " + msg.playerData.remainingTime + " ชั่วโมง");
@@ -178,7 +179,6 @@ public class NetworkClient {
             case PLAYER_LEAVE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
                     onlinePlayers.remove(msg.playerData.playerId);
-                    dataManager.removePlayer(msg.playerData.playerId);
                     System.out.println("Player left: " + msg.playerData.playerId);
                 }
                 break;
@@ -193,6 +193,7 @@ public class NetworkClient {
                 
             case TURN_CHANGE:
                 System.out.println("Turn changed to: " + msg.playerData.playerId);
+                currentTurnPlayer = msg.playerData.playerId;
                 onTurnChanged(msg.playerData.playerId);
                 break;
         }
@@ -201,37 +202,27 @@ public class NetworkClient {
     public void sendPlayerMove(Point newPosition) {
         Point currentPos = myPlayerData.position;
         if (currentPos == null || !currentPos.equals(newPosition)) {
-            if (dataManager.shouldUpdatePosition("localPlayer", newPosition)) {
-                myPlayerData.updatePosition(newPosition);
-                if (isConnected) {
-                    sendMessage(NetworkMessage.createPlayerMove(myPlayerData.playerId, newPosition));
-                    dataManager.updatePlayerPosition("localPlayer", newPosition);
-             
-                    if (System.currentTimeMillis() % 2000 < 100) {
-                        System.out.println("Sent position update: " + newPosition);
-                    }
+            myPlayerData.updatePosition(newPosition);
+            if (isConnected) {
+                sendMessage(NetworkMessage.createPlayerMove(myPlayerData.playerId, newPosition));
+                if (System.currentTimeMillis() % 2000 < 100) {
+                    System.out.println("Sent position update: " + newPosition);
                 }
             }
         }
     }
     
     public void sendPlayerStatsUpdate(int money, int health, int energy) {
-        if (dataManager.shouldUpdateStats("localPlayer", money, health, energy)) {
-            myPlayerData.updateStats(money, health, energy);
-            if (isConnected) {
-                sendMessage(NetworkMessage.createPlayerStatsUpdate(myPlayerData.playerId, money, health, energy));
-                dataManager.updatePlayerStats("localPlayer", money, health, energy);
-            }
+        myPlayerData.updateStats(money, health, energy);
+        if (isConnected) {
+            sendMessage(NetworkMessage.createPlayerStatsUpdate(myPlayerData.playerId, money, health, energy));
         }
     }
     
     public void sendPlayerLocationChange(PlayerState.Location location) {
-        if (dataManager.shouldUpdateLocation("localPlayer", location)) {
-            myPlayerData.updateLocation(location);
-            if (isConnected) {
-                sendMessage(NetworkMessage.createPlayerLocationChange(myPlayerData.playerId, location));
-                dataManager.updatePlayerLocation("localPlayer", location);
-            }
+        myPlayerData.updateLocation(location);
+        if (isConnected) {
+            sendMessage(NetworkMessage.createPlayerLocationChange(myPlayerData.playerId, location));
         }
     }
     
@@ -239,8 +230,6 @@ public class NetworkClient {
         myPlayerData.updateTime(remainingTime);
         if (isConnected) {
             sendMessage(NetworkMessage.createPlayerTimeUpdate(myPlayerData.playerId, remainingTime));
-    
-
             if (System.currentTimeMillis() % 5000 < 100) {
                 System.out.println("ส่งข้อมูลเวลา: " + remainingTime + " ชั่วโมง สำหรับ " + myPlayerData.playerId);
             }
@@ -289,12 +278,16 @@ public class NetworkClient {
         }
     }
     
-    public Map<String, OnlinePlayer> getOnlinePlayers() {
+    public Map<String, PlayerData> getOnlinePlayers() {
         return onlinePlayers;
     }
     
     public PlayerData getMyPlayerData() {
         return myPlayerData.copy();
+    }
+    
+    public String getCurrentTurnPlayer() {
+        return currentTurnPlayer;
     }
     
     public boolean isConnected() {

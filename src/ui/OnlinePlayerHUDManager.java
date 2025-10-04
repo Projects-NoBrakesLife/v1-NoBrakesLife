@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.Map;
+import network.PlayerData;
 
 public class OnlinePlayerHUDManager {
     private Map<String, OnlinePlayerHUD> onlineHUDs;
@@ -42,29 +43,29 @@ public class OnlinePlayerHUDManager {
         reorganizePositions();
     }
     
-    public void updatePlayer(String playerId, network.OnlinePlayer player) {
+    public void updatePlayer(String playerId, PlayerData player) {
         if (player == null || playerId == null) return;
         
         OnlinePlayerHUD hud = onlineHUDs.get(playerId);
         if (hud != null) {
             PlayerState existingState = playerStates.get(playerId);
             if (existingState != null) {
-                existingState.setPlayerName(player.getPlayerName());
-                existingState.setCharacterImagePath(player.getCharacterImage());
-                existingState.setCurrentPosition(player.getPosition());
-                existingState.setMoney(player.getMoney());
-                existingState.setHealth(player.getHealth());
-                existingState.setEnergy(player.getEnergy());
+                existingState.setPlayerName(player.playerName);
+                existingState.setCharacterImagePath(player.characterImage);
+                existingState.setCurrentPosition(player.position);
+                existingState.setMoney(player.money);
+                existingState.setHealth(player.health);
+                existingState.setEnergy(player.energy);
                 hud.updatePlayerState(existingState);
             }
-        } else if (player.getCharacterImage() != null && !player.getCharacterImage().isEmpty() && onlineHUDs.size() < 3) {
+        } else if (player.characterImage != null && !player.characterImage.isEmpty() && onlineHUDs.size() < 3) {
             PlayerState playerState = new PlayerState();
-            playerState.setPlayerName(player.getPlayerName());
-            playerState.setCharacterImagePath(player.getCharacterImage());
-            playerState.setCurrentPosition(player.getPosition());
-            playerState.setMoney(player.getMoney());
-            playerState.setHealth(player.getHealth());
-            playerState.setEnergy(player.getEnergy());
+            playerState.setPlayerName(player.playerName);
+            playerState.setCharacterImagePath(player.characterImage);
+            playerState.setCurrentPosition(player.position);
+            playerState.setMoney(player.money);
+            playerState.setHealth(player.health);
+            playerState.setEnergy(player.energy);
             addPlayer(playerId, playerState);
         }
     }
