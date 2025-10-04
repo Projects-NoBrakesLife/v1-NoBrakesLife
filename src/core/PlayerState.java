@@ -10,23 +10,26 @@ public class PlayerState {
         JOB_OFFICE,
         CULTURE,
         UNIVERSITY
-     
     }
 
     private Location currentLocation;
     private Point currentPosition;
     private String playerName;
+    private String characterImagePath;
     private int money;
     private int health;
     private int energy;
+    private int remainingTime;
 
     public PlayerState() {
         this.currentLocation = Location.APARTMENT_SHITTY;
         this.currentPosition = new Point(878, 300);
         this.playerName = Lang.DEFAULT_PLAYER_NAME;
+        this.characterImagePath = Lang.MALE_01;
         this.money = Config.STARTING_MONEY;
         this.health = Config.STARTING_HEALTH;
         this.energy = Config.STARTING_ENERGY;
+        this.remainingTime = Config.TURN_TIME_HOURS;
     }
 
     public Location getCurrentLocation() {
@@ -43,8 +46,10 @@ public class PlayerState {
     }
 
     public void setCurrentPosition(Point position) {
-        this.currentPosition = new Point(position);
-        Debug.log(Lang.PLAYER_POSITION_SET + position);
+        if (currentPosition == null || !currentPosition.equals(position)) {
+            this.currentPosition = new Point(position);
+            Debug.log(Lang.PLAYER_POSITION_SET + position);
+        }
     }
 
     public String getPlayerName() {
@@ -53,6 +58,14 @@ public class PlayerState {
 
     public void setPlayerName(String name) {
         this.playerName = name;
+    }
+
+    public String getCharacterImagePath() {
+        return characterImagePath;
+    }
+
+    public void setCharacterImagePath(String characterImagePath) {
+        this.characterImagePath = characterImagePath;
     }
 
     public int getMoney() {
@@ -124,6 +137,32 @@ public class PlayerState {
                 currentLocation, currentPosition.x, currentPosition.y, money, health, energy);
     }
 
+    public int getRemainingTime() {
+        return remainingTime;
+    }
+
+    public void setRemainingTime(int time) {
+        this.remainingTime = Math.max(0, time);
+    }
+
+    public void useTime(int hours) {
+        setRemainingTime(this.remainingTime - hours);
+        Debug.log("เวลาที่ใช้: " + hours + " ชั่วโมง, เหลือเวลา: " + this.remainingTime + " ชั่วโมง");
+    }
+
+    public boolean hasTimeLeft() {
+        return remainingTime > 0;
+    }
+
+    public void resetTime() {
+        this.remainingTime = Config.TURN_TIME_HOURS;
+        Debug.log("รีเซ็ตเวลาเป็น " + Config.TURN_TIME_HOURS + " ชั่วโมง");
+    }
+
+    public String getTimeString() {
+        return remainingTime + " ชั่วโมง";
+    }
+
     public void printStatus() {
         Debug.log(Lang.PLAYER_STATUS_HEADER);
         Debug.log(Lang.PLAYER_NAME + playerName);
@@ -132,6 +171,7 @@ public class PlayerState {
         Debug.log(Lang.PLAYER_MONEY + money);
         Debug.log(Lang.PLAYER_HEALTH + health);
         Debug.log(Lang.PLAYER_ENERGY + energy);
+        Debug.log("เวลาที่เหลือ: " + remainingTime + " ชั่วโมง");
         Debug.log(Lang.PLAYER_STATUS_FOOTER);
     }
 }
