@@ -16,7 +16,7 @@ public class Character {
     public Character(Point startPosition) {
         this.position = new Point(startPosition);
         
-        String[] characterImages = {Lang.MALE_01, Lang.MALE_02};
+        String[] characterImages = {Lang.MALE_01, Lang.MALE_02, Lang.FEMALE_01, Lang.FEMALE_02};
         this.imagePath = characterImages[(int)(Math.random() * characterImages.length)];
         
         try {

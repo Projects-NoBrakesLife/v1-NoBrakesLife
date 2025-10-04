@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.swing.*;
 import network.NetworkClient;
-import network.OnlinePlayer;
+import network.PlayerData;
 import ui.CharacterSelection;
 import ui.WindowManager;
 import util.BackgroundUtil;
@@ -40,6 +40,11 @@ public class GamePanel extends JPanel {
     private PlayerState.Location targetLocation;
     private GameObject targetObject;
     private PathFinder pathFinder;
+    private ui.CharacterHUD characterHUD;
+    private ui.OnlinePlayerHUDManager onlineHUDManager;
+    private boolean waitingForPlayers = true;
+    private javax.swing.Timer waitingTimer;
+    private javax.swing.Timer timeCheckTimer;
 
     public GamePanel() {
         background = new ImageIcon(Lang.BACKGROUND_IMAGE).getImage();
@@ -48,22 +53,18 @@ public class GamePanel extends JPanel {
         setFocusable(true);
         requestFocusInWindow();
 
+        gameStateManager = GameStateManager.getInstance();
+        coreDataManager = CoreDataManager.getInstance();
+
         initializeObjects();
         setupLocationPaths();
         pathFinder = new PathFinder(roadPoints);
 
-        character = new core.Character(Config.APARTMENT_POINT);
+        character = null;
         playerState = new PlayerState();
-
-        String playerId = "player" + System.currentTimeMillis();
-        String characterImagePath = character.getImagePath();
-        networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, characterImagePath);
-        networkClient.connect();
-
-        javax.swing.Timer networkTimer = new javax.swing.Timer(Config.NETWORK_UPDATE_INTERVAL, e -> {
-            updateOnlinePlayers();
-        });
-        networkTimer.start();
+        characterHUD = new ui.CharacterHUD(playerState, 80, 100);
+        onlineHUDManager = new ui.OnlinePlayerHUDManager(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
+        networkClient = null;
 
         addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
@@ -100,22 +101,28 @@ public class GamePanel extends JPanel {
                 }
 
                 repaint();
+                
+                if (networkClient != null) {
+                    networkClient.sendPlayerTimeUpdate(playerState.getRemainingTime());
+                }
             }
         });
 
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                if (!isMyTurn()) {
+                    return;
+                }
+                
                 if (e.isControlDown()) {
                     String pointCode = "new Point(" + e.getX() + ", " + e.getY() + ")";
                     java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
                             new java.awt.datatransfer.StringSelection(pointCode), null);
-                    Debug.log(Lang.COPIED + pointCode);
                     return;
                 }
 
                 if (isMoving) {
-                    Debug.log(Lang.CHARACTER_MOVING);
                     return;
                 }
 
@@ -157,9 +164,63 @@ public class GamePanel extends JPanel {
 
     public void selectCharacter() {
         String selectedImage = CharacterSelection.showCharacterSelection(parentFrame);
-        character = new core.Character(character.getPosition(), selectedImage);
-        networkClient.updateCharacterImage(selectedImage);
-        Debug.log(Lang.CHARACTER_SELECTED + selectedImage);
+        if (selectedImage != null && !selectedImage.isEmpty()) {
+            character = new core.Character(Config.APARTMENT_POINT, selectedImage);
+            playerState.setCharacterImagePath(selectedImage);
+            
+            if (characterHUD != null) {
+                characterHUD.loadCharacterIconNow();
+            }
+            
+            Debug.log("Character selected: " + selectedImage);
+            Debug.log("Character created at: " + character.getPosition());
+            
+            connectToServer(selectedImage);
+        }
+    }
+    
+    private void connectToServer(String selectedImage) {
+        String playerId = "player" + System.currentTimeMillis();
+        networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, selectedImage);
+        networkClient.setTurnChangeCallback(this::onTurnChanged);
+        
+        coreDataManager.addPlayer(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, selectedImage);
+        Debug.logTurn("Added myself to CoreDataManager: " + playerId + " (" + Lang.DEFAULT_PLAYER_NAME + ")");
+        
+        networkClient.connect();
+        
+        javax.swing.Timer connectionTimer = new javax.swing.Timer(100, e -> {
+            if (networkClient.isConnected()) {
+                gameStateManager.addPlayer(playerId, Lang.DEFAULT_PLAYER_NAME, selectedImage);
+                startNetworkTimers();
+                ((javax.swing.Timer) e.getSource()).stop();
+            }
+        });
+        connectionTimer.start();
+    }
+    
+    private void startNetworkTimers() {
+        javax.swing.Timer initialUpdateTimer = new javax.swing.Timer(100, e -> {
+            networkClient.sendPlayerUpdate();
+            ((javax.swing.Timer) e.getSource()).stop();
+        });
+        initialUpdateTimer.start();
+
+        javax.swing.Timer networkTimer = new javax.swing.Timer(100, _ -> {
+            updateOnlinePlayers();
+            checkPlayerCount();
+        });
+        networkTimer.start();
+        
+        waitingTimer = new javax.swing.Timer(500, _ -> {
+            checkPlayerCount();
+        });
+        waitingTimer.start();
+        
+        timeCheckTimer = new javax.swing.Timer(1000, _ -> {
+            checkTimeExpired();
+        });
+        timeCheckTimer.start();
     }
 
     @Override
@@ -185,7 +246,7 @@ public class GamePanel extends JPanel {
             g.drawImage(uiBox, cx, cy, boxW, boxH, null);
 
             g.setColor(Color.BLACK);
-            g.setFont(FontManager.getFontForText(hoveredObj.name, 20, Font.BOLD));
+            g.setFont(FontManager.getSmartThaiFont(20, Font.BOLD));
             FontMetrics fm = g.getFontMetrics();
             int textW = fm.stringWidth(hoveredObj.name);
             int tx = Config.GAME_WIDTH / 2 - textW / 2;
@@ -194,12 +255,41 @@ public class GamePanel extends JPanel {
             g.drawString(hoveredObj.name, tx, ty);
         }
 
-        if (character != null) {
+        if (character != null && !waitingForPlayers) {
             character.draw((Graphics2D) g);
         }
 
-        for (core.Character onlineChar : onlineCharacters.values()) {
-            onlineChar.draw((Graphics2D) g);
+        if (!waitingForPlayers) {
+            for (core.Character onlineChar : onlineCharacters.values()) {
+                onlineChar.draw((Graphics2D) g);
+            }
+        }
+
+        if (characterHUD != null) {
+            characterHUD.draw((Graphics2D) g);
+        }
+        
+        if (onlineHUDManager != null) {
+            onlineHUDManager.drawAll((Graphics2D) g);
+        }
+        
+        drawTurnPopup((Graphics2D) g);
+        drawTimeDisplay((Graphics2D) g);
+
+        if (waitingForPlayers) {
+            g.setColor(new Color(0, 0, 0, 150));
+            g.fillRect(0, 0, Config.GAME_WIDTH, Config.GAME_HEIGHT);
+            
+            g.setColor(Color.WHITE);
+            g.setFont(FontManager.getSmartThaiFont(24, Font.BOLD));
+            FontMetrics fm = g.getFontMetrics();
+            
+            int totalPlayers = 1 + onlineCharacters.size();
+            String waitingText = "รอผู้เล่นอื่น... (" + totalPlayers + "/" + Config.MIN_PLAYERS_TO_START + ")";
+            int textWidth = fm.stringWidth(waitingText);
+            int textX = (Config.GAME_WIDTH - textWidth) / 2;
+            int textY = Config.GAME_HEIGHT / 2;
+            g.drawString(waitingText, textX, textY);
         }
 
         g.setColor(Color.GRAY);
@@ -209,17 +299,21 @@ public class GamePanel extends JPanel {
             Point p2 = roadPoints.get(i + 1);
             g.drawLine(p1.x, p1.y, p2.x, p2.y);
         }
-
-        g.setColor(Color.CYAN);
-        g.setFont(FontManager.getFontForText(Lang.CLICK_BUILDINGS_HINT, 14, Font.BOLD));
-        g.drawString(Lang.CLICK_BUILDINGS_HINT, 10, Config.GAME_HEIGHT - 50);
-        g.setFont(FontManager.getFontForText(Lang.CURRENT_LOCATION + playerState.getCurrentLocation(), 14, Font.BOLD));
-        g.drawString(Lang.CURRENT_LOCATION + playerState.getCurrentLocation(), 10, Config.GAME_HEIGHT - 30);
-        g.setFont(FontManager.getFontForText(Lang.MOUSE_POSITION + mousePosition.x + ", " + mousePosition.y, 14, Font.BOLD));
-        g.drawString(Lang.MOUSE_POSITION + mousePosition.x + ", " + mousePosition.y, 10, Config.GAME_HEIGHT - 10);
     }
 
     private void showObjectWindow(GameObject obj) {
+        if (!isMyTurn()) {
+            String currentTurnPlayer = gameStateManager.getCurrentTurnPlayer();
+            String currentPlayerName = getPlayerNameById(currentTurnPlayer);
+            Debug.log("❌ ไม่ใช่รอบของคุณ! รอรอบของ: " + currentPlayerName);
+            return;
+        }
+        
+        if (!playerState.hasTimeLeft()) {
+            Debug.log("⏰ เวลาหมดแล้ว! ไม่สามารถเดินได้");
+            return;
+        }
+        
         if (obj.name.equals(Lang.APARTMENT_NAME)) {
             moveToLocation(PlayerState.Location.APARTMENT_SHITTY, obj);
         } else if (obj.name.equals(Lang.BANK_NAME)) {
@@ -236,6 +330,18 @@ public class GamePanel extends JPanel {
     }
 
     private void moveToLocation(PlayerState.Location targetLocation, GameObject obj) {
+        if (!isMyTurn()) {
+            String currentTurnPlayer = gameStateManager.getCurrentTurnPlayer();
+            String currentPlayerName = getPlayerNameById(currentTurnPlayer);
+            Debug.log("❌ ไม่ใช่รอบของคุณ! รอรอบของ: " + currentPlayerName);
+            return;
+        }
+        
+        if (character == null) {
+            Debug.log("❌ ตัวละครยังไม่ได้สร้าง!");
+            return;
+        }
+        
         PlayerState.Location currentLocation = playerState.getCurrentLocation();
 
         if (currentLocation == targetLocation) {
@@ -267,6 +373,18 @@ public class GamePanel extends JPanel {
     }
 
     private void startMovement(java.util.List<Point> path, PlayerState.Location targetLocation, GameObject obj) {
+        if (!isMyTurn()) {
+            String currentTurnPlayer = gameStateManager.getCurrentTurnPlayer();
+            String currentPlayerName = getPlayerNameById(currentTurnPlayer);
+            Debug.log("❌ ไม่ใช่รอบของคุณ! รอรอบของ: " + currentPlayerName);
+            return;
+        }
+        
+        if (character == null) {
+            Debug.log("❌ ตัวละครยังไม่ได้สร้าง!");
+            return;
+        }
+        
         this.currentPath = path;
         this.targetLocation = targetLocation;
         this.targetObject = obj;
@@ -278,9 +396,22 @@ public class GamePanel extends JPanel {
         moveTimer = new javax.swing.Timer(Config.MOVEMENT_TIMER_INTERVAL, e -> {
             if (currentPathIndex < currentPath.size()) {
                 Point targetPoint = currentPath.get(currentPathIndex);
-                character.setPosition(targetPoint);
-                playerState.setCurrentPosition(targetPoint);
-                networkClient.sendPlayerMove(targetPoint);
+                Point currentPos = character.getPosition();
+                
+                if (!targetPoint.equals(currentPos)) {
+                    character.setPosition(targetPoint);
+                    playerState.setCurrentPosition(targetPoint);
+                    
+                    if (networkClient != null) {
+                        networkClient.sendPlayerMove(targetPoint);
+                        networkClient.sendPlayerTimeUpdate(playerState.getRemainingTime());
+                    }
+                }
+                
+                if (networkClient != null && currentPathIndex % 2 == 0) {
+                    networkClient.sendPlayerLocationChange(playerState.getCurrentLocation());
+                }
+                
                 currentPathIndex++;
                 repaint();
             } else {
@@ -294,9 +425,29 @@ public class GamePanel extends JPanel {
         moveTimer.stop();
         isMoving = false;
         playerState.setCurrentLocation(targetLocation);
-        Debug.log(Lang.ARRIVED_AT + targetLocation);
-        playerState.printStatus();
-        showWindowForLocation(targetLocation);
+        
+        if (playerState.hasTimeLeft()) {
+            playerState.useTime(Config.TIME_PER_MOVEMENT);
+            playerState.printStatus();
+            showWindowForLocation(targetLocation);
+            
+            if (networkClient != null) {
+                networkClient.sendPlayerStatsUpdate(playerState.getMoney(), playerState.getHealth(), playerState.getEnergy());
+                int currentTime = playerState.getRemainingTime();
+                if (currentTime != lastSentTime) {
+                    networkClient.sendPlayerTimeUpdate(currentTime);
+                    lastSentTime = currentTime;
+                    Debug.log("ส่งข้อมูลเวลาเมื่อเดินเสร็จ: " + currentTime + " ชั่วโมง");
+                }
+            }
+        } else {
+            Debug.log("⏰ เวลาหมดแล้ว! เทิร์นนี้จบแล้ว");
+            playerState.resetTime();
+            if (isTurnBasedMode && isMyTurn()) {
+                Debug.log("🎯 เวลาหมด - ส่งเทิร์นเสร็จสิ้น");
+                sendTurnCompleteToServer();
+            }
+        }
     }
 
     private void showWindowForLocation(PlayerState.Location location) {
@@ -316,39 +467,324 @@ public class GamePanel extends JPanel {
     }
 
     private void updateCharacterPosition(PlayerState.Location location) {
+        if (character == null) {
+            Debug.log("❌ ตัวละครยังไม่ได้สร้าง!");
+            return;
+        }
+        
         Point position = locationPoints.get(location);
         if (position != null) {
-            character.setPosition(position);
-            playerState.setCurrentPosition(position);
+            Point currentPos = character.getPosition();
+            if (!position.equals(currentPos)) {
+                character.setPosition(position);
+                playerState.setCurrentPosition(position);
+            }
         }
     }
 
+    private Map<String, Point> lastKnownPositions = new HashMap<>();
+    private Map<String, Long> lastUpdateTimes = new HashMap<>();
+    
+    
+    private boolean isTurnBasedMode = true;
+    private long turnPopupStartTime = 0;
+    private static final long TURN_POPUP_DURATION = 2000; 
+    
+    private GameStateManager gameStateManager;
+    private CoreDataManager coreDataManager;
+    
+    
+    private boolean isMyTurn() {
+        if (!isTurnBasedMode) return true;
+        
+        String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
+        String currentTurnPlayer = coreDataManager.getCurrentTurnPlayer();
+        
+        if (currentTurnPlayer == null) {
+            Debug.logTurn("isMyTurn: Game not started yet, currentTurnPlayer is null");
+            return false;
+        }
+        
+        if (myPlayerId == null) {
+            Debug.logTurn("isMyTurn: networkClient is null, cannot determine turn");
+            return false;
+        }
+        
+        boolean isMyTurn = currentTurnPlayer.equals(myPlayerId);
+        
+        if (isMyTurn) {
+            Debug.logTurn("✅ เป็นเทิร์นของคุณ: " + myPlayerId);
+        } else {
+            Debug.logTurn("⏳ ไม่ใช่เทิร์นของคุณ - เทิร์นปัจจุบัน: " + currentTurnPlayer + ", คุณ: " + myPlayerId);
+        }
+        
+        return isMyTurn;
+    }
+    
     private void updateOnlinePlayers() {
-        Map<String, OnlinePlayer> players = networkClient.getOnlinePlayers();
+        if (networkClient == null) return;
+        Map<String, PlayerData> players = networkClient.getOnlinePlayers();
 
         Set<String> currentPlayerIds = new HashSet<>(players.keySet());
         Set<String> characterIds = new HashSet<>(onlineCharacters.keySet());
 
+        long currentTime = System.currentTimeMillis();
+
         for (String playerId : currentPlayerIds) {
-            OnlinePlayer player = players.get(playerId);
+            PlayerData player = players.get(playerId);
+            if (player == null) {
+                continue;
+            }
+            
             if (!onlineCharacters.containsKey(playerId)) {
-                onlineCharacters.put(playerId, new core.Character(player.position, player.characterImage));
-                Debug.log(Lang.ONLINE_CHARACTER_CREATED + playerId + Lang.ONLINE_CHARACTER_WITH + player.characterImage);
+                Point playerPosition = player.position != null ? player.position : Config.APARTMENT_POINT;
+                String characterImage = player.characterImage != null ? player.characterImage : Lang.MALE_01;
+                
+                onlineCharacters.put(playerId, new core.Character(playerPosition, characterImage));
+                lastKnownPositions.put(playerId, playerPosition);
+                lastUpdateTimes.put(playerId, currentTime);
+                
+                PlayerState playerState = new PlayerState();
+                playerState.setPlayerName(player.playerName);
+                playerState.setCharacterImagePath(characterImage);
+                playerState.setCurrentPosition(playerPosition);
+                playerState.setMoney(player.money);
+                playerState.setHealth(player.health);
+                playerState.setEnergy(player.energy);
+                onlineHUDManager.addPlayer(playerId, playerState);
+                
+              
+                if (!coreDataManager.getAllPlayers().containsKey(playerId)) {
+                    coreDataManager.addPlayer(playerId, player.playerName, playerPosition, characterImage);
+                    Debug.logTurn("Added player to CoreDataManager: " + playerId + " (" + player.playerName + ")");
+                    
+                    if (coreDataManager.canStartGame()) {
+                        String currentTurn = coreDataManager.getCurrentTurnPlayer();
+                        if (currentTurn != null) {
+                            Debug.logTurn("🎮 Game started! Current turn: " + currentTurn);
+                            
+                            showInitialTurnPopup();
+                            
+                            updateTurnFromServer();
+                        } else {
+                            Debug.logTurn("🎮 Game ready but no turn set yet, waiting for server...");
+                        }
+                    }
+                } else {
+                    Debug.logTurn("Player already exists in CoreDataManager: " + playerId + " (" + player.playerName + ")");
+                }
+                           java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
+                String myPlayerId = networkClient.getMyPlayerData().playerId;
+                allPlayerIds.add(myPlayerId);
+                allPlayerIds.addAll(networkClient.getOnlinePlayers().keySet());
+                updatePlayerNumbers(allPlayerIds);
             } else {
                 core.Character existingChar = onlineCharacters.get(playerId);
-                existingChar.setPosition(player.position);
-                existingChar.updateImage(player.characterImage);
+                if (existingChar != null) {
+                    Point newPos = player.position;
+                    Point lastKnownPos = lastKnownPositions.get(playerId);
+                    
+                    if (newPos != null && (lastKnownPos == null || !lastKnownPos.equals(newPos))) {
+                        existingChar.setPosition(newPos);
+                        lastKnownPositions.put(playerId, newPos);
+                        lastUpdateTimes.put(playerId, currentTime);
+                    }
+            
+                    String currentImage = existingChar.getImagePath();
+                    String newImage = player.characterImage;
+                    if (newImage != null && !newImage.isEmpty() && !newImage.equals(currentImage)) {
+                        existingChar.updateImage(newImage);
+                        onlineHUDManager.updatePlayer(playerId, player);
+                    }
+                    onlineHUDManager.updatePlayer(playerId, player);
+                    
+                    if (coreDataManager.canStartGame()) {
+                        String currentTurn = coreDataManager.getCurrentTurnPlayer();
+                        if (currentTurn != null) {
+                            Debug.logTurn("🎮 Received turn data from server: " + currentTurn);
+                            updateTurnFromServer();
+                        }
+                    }
+                    
+                    if (currentTime % 1000 < 50) { 
+                        Debug.log("อัปเดตข้อมูลผู้เล่น: " + playerId + " เวลา: " + player.remainingTime + " ชั่วโมง");
+                    }
+                }
             }
         }
 
         for (String characterId : characterIds) {
             if (!currentPlayerIds.contains(characterId)) {
                 onlineCharacters.remove(characterId);
-                Debug.log(Lang.ONLINE_CHARACTER_REMOVED + characterId);
+                lastKnownPositions.remove(characterId);
+                lastUpdateTimes.remove(characterId);
+                onlineHUDManager.removePlayer(characterId);
+                
+                java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
+                String myPlayerId = networkClient.getMyPlayerData().playerId;
+                allPlayerIds.add(myPlayerId);
+                allPlayerIds.addAll(networkClient.getOnlinePlayers().keySet());
+                updatePlayerNumbers(allPlayerIds);
             }
         }
 
         repaint();
+    }
+
+    
+    private void sendTurnCompleteToServer() {
+        if (networkClient != null) {
+            networkClient.sendTurnComplete();
+            Debug.log("📤 ส่งข้อความเทิร์นเสร็จสิ้นไปยังเซิร์ฟเวอร์");
+        }
+    }
+    
+    private void updateTurnFromServer() {
+        if (onlineHUDManager != null) {
+            String currentTurn = coreDataManager.getCurrentTurnPlayer();
+            onlineHUDManager.updateTurn(currentTurn);
+        }
+        if (characterHUD != null) {
+            String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
+            String currentTurn = coreDataManager.getCurrentTurnPlayer();
+            characterHUD.setCurrentTurn(currentTurn != null && myPlayerId != null && currentTurn.equals(myPlayerId));
+        }
+    }
+    
+    private void onTurnChanged(String newTurnPlayerId) {
+        turnPopupStartTime = System.currentTimeMillis();
+        
+        String playerName = getPlayerNameById(newTurnPlayerId);
+        Debug.logTurn("🎯 เทิร์นเปลี่ยนเป็น: " + playerName + " (" + newTurnPlayerId + ")");
+        
+        String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
+        if (myPlayerId != null && newTurnPlayerId.equals(myPlayerId)) {
+            playerState.resetTime();
+            Debug.logTurn("✅ ตอนนี้เป็นเทิร์นของคุณแล้ว! เวลาถูกรีเซ็ตเป็น " + Config.TURN_TIME_HOURS + " ชั่วโมง");
+        } else {
+            Debug.logTurn("⏳ รอเทิร์นของ: " + playerName + " - คุณไม่สามารถเดินได้");
+        }
+        
+        coreDataManager.forceSetTurn(newTurnPlayerId);
+        
+        updateTurnFromServer();
+        repaint();
+        
+        if (coreDataManager.canStartGame()) {
+            showInitialTurnPopup();
+        }
+    }
+    
+    
+    private void syncPlayerState() {
+        if (characterHUD != null) {
+            characterHUD.updatePlayerState(playerState);
+        }
+    }
+    
+    private int lastSentTime = -1;
+    
+    private void updatePlayerNumbers(java.util.List<String> allPlayerIds) {
+        String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
+        
+        java.util.Collections.sort(allPlayerIds);
+        
+        Debug.log("อัปเดต Player Numbers - รายการผู้เล่นทั้งหมด: " + allPlayerIds);
+        
+        for (int i = 0; i < allPlayerIds.size(); i++) {
+            String playerId = allPlayerIds.get(i);
+            int playerNumber = i + 1;
+            
+            if (myPlayerId != null && playerId.equals(myPlayerId)) {
+                if (characterHUD != null) {
+                    characterHUD.setPlayerNumber(playerNumber);
+                    Debug.log("ตั้งค่า Player Number สำหรับตัวเรา: P" + playerNumber + " (" + playerId + ")");
+                }
+            } else {
+                if (onlineHUDManager != null) {
+                    onlineHUDManager.setPlayerNumber(playerId, playerNumber);
+                    Debug.log("ตั้งค่า Player Number สำหรับ " + playerId + ": P" + playerNumber);
+                }
+            }
+        }
+    }
+    
+    private void drawTurnPopup(Graphics2D g2d) {
+        String currentTurnPlayer = coreDataManager.getCurrentTurnPlayer();
+        if (currentTurnPlayer == null) {
+            int playerCount = coreDataManager.getPlayerCount();
+            if (playerCount < Config.MIN_PLAYERS_TO_START) {
+                Debug.logTurn("drawTurnPopup: Waiting for more players (" + playerCount + "/" + Config.MIN_PLAYERS_TO_START + ")");
+                return;
+            } else {
+                Debug.logTurn("drawTurnPopup: Game should start but currentTurnPlayer is null");
+                return;
+            }
+        }
+        
+        Debug.logTurn("drawTurnPopup: currentTurnPlayer = " + currentTurnPlayer);
+        
+        long currentTime = System.currentTimeMillis();
+        long elapsedTime = currentTime - turnPopupStartTime;
+     
+        if (elapsedTime > TURN_POPUP_DURATION) return;
+  
+        float alpha = 1.0f - (float) elapsedTime / TURN_POPUP_DURATION;
+        alpha = Math.max(0.0f, Math.min(1.0f, alpha));
+        
+        String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
+        boolean isMyTurn = (myPlayerId != null) && currentTurnPlayer.equals(myPlayerId);
+        
+        int turnPlayerNumber = getPlayerNumber(currentTurnPlayer);
+        
+        int centerX = Config.GAME_WIDTH / 2;
+        int centerY = Config.GAME_HEIGHT / 2;
+        int tokenSize = 120; 
+        
+        g2d.setColor(new Color(0, 0, 0, (int)(180 * alpha)));
+        g2d.fillRect(0, 0, Config.GAME_WIDTH, Config.GAME_HEIGHT);
+        
+        try {
+            String tokenPath = "assets/ui/hud/Token P" + turnPlayerNumber + " Front.png";
+            java.awt.image.BufferedImage tokenIcon = javax.imageio.ImageIO.read(new java.io.File(tokenPath));
+            
+            if (tokenIcon != null) {
+                g2d.drawImage(tokenIcon, centerX - tokenSize/2, centerY - tokenSize/2, tokenSize, tokenSize, null);
+            }
+        } catch (Exception e) {
+            g2d.setColor(new Color(isMyTurn ? 0 : 255, isMyTurn ? 255 : 255, 0, (int)(200 * alpha)));
+            g2d.fillOval(centerX - tokenSize/2, centerY - tokenSize/2, tokenSize, tokenSize);
+        }
+        
+        String playerName = getPlayerNameById(currentTurnPlayer);
+        String turnText = isMyTurn ? "เทิร์นของคุณ!" : "เทิร์นของ " + playerName;
+        
+        g2d.setColor(new Color(255, 255, 255, (int)(255 * alpha)));
+        g2d.setFont(FontManager.getSmartThaiFont(24, Font.BOLD));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(turnText);
+        int textX = centerX - textWidth / 2;
+        int textY = centerY + tokenSize/2 + 40;
+        g2d.drawString(turnText, textX, textY);
+        
+        Debug.logTurn("drawTurnPopup: " + turnText + " (alpha: " + alpha + ")");
+    }
+    
+    private String getPlayerNameById(String playerId) {
+        if (networkClient != null) {
+            Map<String, PlayerData> players = networkClient.getOnlinePlayers();
+            PlayerData player = players.get(playerId);
+            if (player != null) {
+                return player.playerName;
+            }
+        }
+        
+        PlayerData player = coreDataManager.getPlayer(playerId);
+        if (player != null) {
+            return player.playerName;
+        }
+        
+        return "ผู้เล่น";
     }
 
     public void mousePressed(java.awt.event.MouseEvent e) {
@@ -367,5 +803,122 @@ public class GamePanel extends JPanel {
 
     public void setParentFrame(JFrame frame) {
         this.parentFrame = frame;
+    }
+    
+    
+    private void checkPlayerCount() {
+        int totalPlayers = coreDataManager.getPlayerCount();
+        boolean shouldWait = totalPlayers < Config.MIN_PLAYERS_TO_START;
+        boolean gameReady = totalPlayers >= Config.MIN_PLAYERS_TO_START;
+        
+        Debug.logTurn("checkPlayerCount: " + totalPlayers + "/" + Config.MIN_PLAYERS_TO_START + " players");
+        
+        if (waitingForPlayers != shouldWait) {
+            waitingForPlayers = shouldWait;
+            
+            if (!waitingForPlayers && gameReady) {
+                if (coreDataManager.canStartGame()) {
+                    String currentTurn = coreDataManager.getCurrentTurnPlayer();
+                    if (currentTurn != null) {
+                        Debug.logTurn("🎮 Game started! First turn: " + currentTurn);
+                        
+                        showInitialTurnPopup();
+                        
+                        updateTurnFromServer();
+                    } else {
+                        Debug.logTurn("🎮 Game ready but no turn set yet, waiting for server...");
+                    }
+                }
+            }
+        }
+    }
+    
+    private void showInitialTurnPopup() {
+        turnPopupStartTime = System.currentTimeMillis();
+    }
+    
+    private void checkTimeExpired() {
+        String currentTurnPlayer = coreDataManager.getCurrentTurnPlayer();
+        if (currentTurnPlayer == null) {
+            Debug.logTurn("checkTimeExpired: currentTurnPlayer is null");
+            return;
+        }
+        
+        String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
+        if (myPlayerId == null || !currentTurnPlayer.equals(myPlayerId)) {
+            Debug.logTurn("checkTimeExpired: Not my turn, current turn: " + currentTurnPlayer + ", my ID: " + myPlayerId);
+            return;
+        }
+        
+        if (!playerState.hasTimeLeft()) {
+            Debug.logTurn("⏰ เวลาหมดแล้ว! ส่งเทิร์นเสร็จสิ้นอัตโนมัติ");
+            playerState.resetTime();
+            sendTurnCompleteToServer();
+        }
+    }
+    
+    private void drawTimeDisplay(Graphics2D g2d) {
+        if (playerState == null || waitingForPlayers) return;
+        
+        int currentPlayerTime = 0;
+        String currentPlayerName = "";
+        
+        String currentTurnPlayer = coreDataManager.getCurrentTurnPlayer();
+        Debug.logTurn("drawTimeDisplay: currentTurnPlayer = " + currentTurnPlayer);
+        
+        if (currentTurnPlayer == null) {
+            int playerCount = coreDataManager.getPlayerCount();
+            if (playerCount < Config.MIN_PLAYERS_TO_START) {
+                Debug.logTurn("drawTimeDisplay: Waiting for more players (" + playerCount + "/" + Config.MIN_PLAYERS_TO_START + ")");
+                currentPlayerTime = playerState.getRemainingTime();
+                currentPlayerName = "รอผู้เล่น (" + playerCount + "/" + Config.MIN_PLAYERS_TO_START + ")";
+            } else {
+                Debug.logTurn("drawTimeDisplay: Game should start but currentTurnPlayer is null");
+                currentPlayerTime = playerState.getRemainingTime();
+                currentPlayerName = "คุณ (P1)";
+            }
+        } else {
+            String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
+            if (myPlayerId != null && currentTurnPlayer.equals(myPlayerId)) {
+                currentPlayerTime = playerState.getRemainingTime();
+                currentPlayerName = "คุณ (P" + getPlayerNumber(myPlayerId) + ")";
+            } else {
+                PlayerData currentPlayer = (networkClient != null) ? networkClient.getOnlinePlayers().get(currentTurnPlayer) : null;
+                if (currentPlayer != null) {
+                    currentPlayerTime = currentPlayer.remainingTime;
+                    currentPlayerName = currentPlayer.playerName + " (P" + getPlayerNumber(currentTurnPlayer) + ")";
+                } else {
+                    currentPlayerTime = 24;
+                    currentPlayerName = "ผู้เล่นอื่น (P" + getPlayerNumber(currentTurnPlayer) + ")";
+                }
+            }
+        }
+        
+        String timeText = currentPlayerName + " - เวลาที่เหลือ: " + currentPlayerTime + " ชั่วโมง";
+        
+        g2d.setColor(new Color(0, 0, 0, 150));
+        g2d.fillRoundRect(Config.GAME_WIDTH/2 - 200, Config.GAME_HEIGHT - 60, 400, 40, 10, 10);
+        
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(FontManager.getSmartThaiFont(Config.TIME_DISPLAY_FONT_SIZE, Font.BOLD));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(timeText);
+        int textX = Config.GAME_WIDTH/2 - textWidth/2;
+        int textY = Config.GAME_HEIGHT - 30;
+        
+        g2d.drawString(timeText, textX, textY);
+    }
+    
+    private int getPlayerNumber(String playerId) {
+        if (networkClient == null) return 1;
+        
+        java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
+        String myPlayerId = networkClient.getMyPlayerData().playerId;
+        allPlayerIds.add(myPlayerId);
+        allPlayerIds.addAll(networkClient.getOnlinePlayers().keySet());
+        java.util.Collections.sort(allPlayerIds);
+        
+        int index = allPlayerIds.indexOf(playerId);
+        return index >= 0 ? index + 1 : 1;
     }
 }
