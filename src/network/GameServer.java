@@ -372,6 +372,17 @@ public class GameServer extends JFrame {
                 }
                 break;
                 
+            case PLAYER_TIME_UPDATE:
+                OnlinePlayer timePlayer = onlinePlayers.get(msg.playerData.playerId);
+                if (timePlayer != null) {
+                    timePlayer.updateTime(msg.playerData.remainingTime);
+                    log("Player time updated: " + msg.playerData.playerId + " to " + msg.playerData.remainingTime + " hours");
+                    broadcastMessage(msg, sender);
+                } else {
+                    log("Player not found for time update: " + msg.playerData.playerId);
+                }
+                break;
+                
             case PLAYER_LEAVE:
                 String displayId = playerIdToDisplayId.get(msg.playerData.playerId);
                 onlinePlayers.remove(msg.playerData.playerId);

@@ -160,6 +160,21 @@ public class NetworkClient {
                 }
                 break;
                 
+            case PLAYER_TIME_UPDATE:
+                System.out.println("รับข้อความ PLAYER_TIME_UPDATE จาก: " + msg.playerData.playerId + " เวลา: " + msg.playerData.remainingTime + " ชั่วโมง");
+                if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
+                    OnlinePlayer player = onlinePlayers.get(msg.playerData.playerId);
+                    if (player != null) {
+                        player.updateTime(msg.playerData.remainingTime);
+                        System.out.println("อัปเดตเวลาผู้เล่น: " + msg.playerData.playerId + " เป็น " + msg.playerData.remainingTime + " ชั่วโมง");
+                    } else {
+                        System.out.println("ไม่พบผู้เล่น: " + msg.playerData.playerId + " สำหรับอัปเดตเวลา");
+                    }
+                } else {
+                    System.out.println("รับข้อมูลเวลาของตัวเอง: " + msg.playerData.remainingTime + " ชั่วโมง");
+                }
+                break;
+                
             case PLAYER_LEAVE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
                     onlinePlayers.remove(msg.playerData.playerId);
@@ -210,6 +225,14 @@ public class NetworkClient {
                 sendMessage(NetworkMessage.createPlayerLocationChange(myPlayerData.playerId, location));
                 dataManager.updatePlayerLocation("localPlayer", location);
             }
+        }
+    }
+    
+    public void sendPlayerTimeUpdate(int remainingTime) {
+        myPlayerData.updateTime(remainingTime);
+        if (isConnected) {
+            sendMessage(NetworkMessage.createPlayerTimeUpdate(myPlayerData.playerId, remainingTime));
+            System.out.println("ส่งข้อมูลเวลา: " + remainingTime + " ชั่วโมง สำหรับ " + myPlayerData.playerId);
         }
     }
     

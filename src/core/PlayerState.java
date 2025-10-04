@@ -19,6 +19,7 @@ public class PlayerState {
     private int money;
     private int health;
     private int energy;
+    private int remainingTime;
 
     public PlayerState() {
         this.currentLocation = Location.APARTMENT_SHITTY;
@@ -28,6 +29,7 @@ public class PlayerState {
         this.money = Config.STARTING_MONEY;
         this.health = Config.STARTING_HEALTH;
         this.energy = Config.STARTING_ENERGY;
+        this.remainingTime = Config.TURN_TIME_HOURS;
     }
 
     public Location getCurrentLocation() {
@@ -135,6 +137,32 @@ public class PlayerState {
                 currentLocation, currentPosition.x, currentPosition.y, money, health, energy);
     }
 
+    public int getRemainingTime() {
+        return remainingTime;
+    }
+
+    public void setRemainingTime(int time) {
+        this.remainingTime = Math.max(0, time);
+    }
+
+    public void useTime(int hours) {
+        setRemainingTime(this.remainingTime - hours);
+        Debug.log("เวลาที่ใช้: " + hours + " ชั่วโมง, เหลือเวลา: " + this.remainingTime + " ชั่วโมง");
+    }
+
+    public boolean hasTimeLeft() {
+        return remainingTime > 0;
+    }
+
+    public void resetTime() {
+        this.remainingTime = Config.TURN_TIME_HOURS;
+        Debug.log("รีเซ็ตเวลาเป็น " + Config.TURN_TIME_HOURS + " ชั่วโมง");
+    }
+
+    public String getTimeString() {
+        return remainingTime + " ชั่วโมง";
+    }
+
     public void printStatus() {
         Debug.log(Lang.PLAYER_STATUS_HEADER);
         Debug.log(Lang.PLAYER_NAME + playerName);
@@ -143,6 +171,7 @@ public class PlayerState {
         Debug.log(Lang.PLAYER_MONEY + money);
         Debug.log(Lang.PLAYER_HEALTH + health);
         Debug.log(Lang.PLAYER_ENERGY + energy);
+        Debug.log("เวลาที่เหลือ: " + remainingTime + " ชั่วโมง");
         Debug.log(Lang.PLAYER_STATUS_FOOTER);
     }
 }

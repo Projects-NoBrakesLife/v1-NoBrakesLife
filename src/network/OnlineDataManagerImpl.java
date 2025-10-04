@@ -15,10 +15,10 @@ public class OnlineDataManagerImpl implements OnlineDataManager {
     private Map<String, Integer> lastEnergy = new HashMap<>();
     private Map<String, Long> lastStatsTimes = new HashMap<>();
     
-    private static final long POSITION_UPDATE_INTERVAL = 100;
-    private static final long LOCATION_UPDATE_INTERVAL = 1000;
-    private static final long STATS_UPDATE_INTERVAL = 2000;
-    private static final int POSITION_THRESHOLD = 5;
+    private static final long POSITION_UPDATE_INTERVAL = 16;
+    private static final long LOCATION_UPDATE_INTERVAL = 100;
+    private static final long STATS_UPDATE_INTERVAL = 200;
+    private static final int POSITION_THRESHOLD = 2;
     
     @Override
     public void updatePlayerPosition(String playerId, Point position) {
