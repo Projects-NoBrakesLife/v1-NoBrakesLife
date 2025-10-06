@@ -1,6 +1,6 @@
 package util;
 
-import core.Config;
+import core.GameConfig;
 import core.Debug;
 import java.awt.Font;
 import java.awt.FontFormatException;
@@ -19,18 +19,18 @@ public class FontManager {
         }
         
         try {
-            File fontFile = new File(Config.FONT_PATH_THAI);
+            File fontFile = new File(GameConfig.Font.PATH_THAI);
             if (fontFile.exists()) {
                 thaiFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
                 thaiFontLoaded = true;
-                Debug.log("Thai font loaded successfully: " + Config.FONT_PATH_THAI);
+                Debug.log("Thai font loaded successfully: " + GameConfig.Font.PATH_THAI);
                 return thaiFont;
             } else {
-                Debug.warning("Thai font file not found: " + Config.FONT_PATH_THAI);
+                Debug.warning("Thai font file not found: " + GameConfig.Font.PATH_THAI);
                 return getDefaultFont();
             }
         } catch (FontFormatException | IOException e) {
-            Debug.error("Failed to load Thai font: " + Config.FONT_PATH_THAI, e);
+            Debug.error("Failed to load Thai font: " + GameConfig.Font.PATH_THAI, e);
             try {
                 thaiFont = new Font("Tahoma", Font.PLAIN, 12);
                 thaiFontLoaded = true;
@@ -49,7 +49,7 @@ public class FontManager {
         }
         
         try {
-            File fontFile = new File(Config.FONT_PATH_ENGLISH);
+            File fontFile = new File(GameConfig.Font.PATH_ENGLISH);
             if (fontFile.exists()) {
                 try {
                     englishFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
@@ -57,14 +57,14 @@ public class FontManager {
                     englishFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
                 }
                 englishFontLoaded = true;
-                Debug.log("English font loaded successfully: " + Config.FONT_PATH_ENGLISH);
+                Debug.log("English font loaded successfully: " + GameConfig.Font.PATH_ENGLISH);
                 return englishFont;
             } else {
-                Debug.warning("English font file not found: " + Config.FONT_PATH_ENGLISH);
+                Debug.warning("English font file not found: " + GameConfig.Font.PATH_ENGLISH);
                 return getDefaultFont();
             }
         } catch (FontFormatException | IOException e) {
-            Debug.error("Failed to load English font: " + Config.FONT_PATH_ENGLISH, e);
+            Debug.error("Failed to load English font: " + GameConfig.Font.PATH_ENGLISH, e);
             try {
                 englishFont = new Font("Arial", Font.PLAIN, 12);
                 englishFontLoaded = true;
@@ -80,12 +80,12 @@ public class FontManager {
     public static Font getDefaultFont() {
         Font arabicaFont = loadThaiFont();
         if (arabicaFont != null) {
-            return arabicaFont.deriveFont((float) Config.FONT_SIZE_SMALL);
+            return arabicaFont.deriveFont((float) GameConfig.Font.SIZE_SMALL);
         }
         try {
-            return new Font("Tahoma", Font.PLAIN, Config.FONT_SIZE_SMALL);
+            return new Font("Tahoma", Font.PLAIN, GameConfig.Font.SIZE_SMALL);
         } catch (Exception e) {
-            return new Font(Config.DEFAULT_FONT_NAME, Font.PLAIN, Config.FONT_SIZE_SMALL);
+            return new Font(GameConfig.Font.DEFAULT_NAME, Font.PLAIN, GameConfig.Font.SIZE_SMALL);
         }
     }
     
@@ -94,31 +94,31 @@ public class FontManager {
         if (baseFont != null) {
             return baseFont.deriveFont((float) size);
         }
-        return new Font(Config.DEFAULT_FONT_NAME, Font.PLAIN, size);
+        return new Font(GameConfig.Font.DEFAULT_NAME, Font.PLAIN, size);
     }
-    
+
     public static Font getThaiFont(int size, int style) {
         Font baseFont = loadThaiFont();
         if (baseFont != null) {
             return baseFont.deriveFont(style, (float) size);
         }
-        return new Font(Config.DEFAULT_FONT_NAME, style, size);
+        return new Font(GameConfig.Font.DEFAULT_NAME, style, size);
     }
-    
+
     public static Font getEnglishFont(int size) {
         Font baseFont = loadEnglishFont();
         if (baseFont != null) {
             return baseFont.deriveFont((float) size);
         }
-        return new Font(Config.DEFAULT_FONT_NAME, Font.PLAIN, size);
+        return new Font(GameConfig.Font.DEFAULT_NAME, Font.PLAIN, size);
     }
-    
+
     public static Font getEnglishFont(int size, int style) {
         Font baseFont = loadEnglishFont();
         if (baseFont != null) {
             return baseFont.deriveFont(style, (float) size);
         }
-        return new Font(Config.DEFAULT_FONT_NAME, style, size);
+        return new Font(GameConfig.Font.DEFAULT_NAME, style, size);
     }
     
     public static boolean isThaiText(String text) {

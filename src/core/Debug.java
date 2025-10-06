@@ -5,17 +5,77 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Debug {
-    private static boolean enabled = true;
-    private static boolean fileLoggingEnabled = true;
-    private static String logDirectory = "logs";
+    private static boolean enabled = GameConfig.Debug.ENABLED;
+    private static boolean fileLoggingEnabled = GameConfig.Debug.FILE_LOGGING_ENABLED;
+    private static String logDirectory = GameConfig.Debug.LOG_DIRECTORY;
     private static Map<String, PrintWriter> playerLogWriters = new ConcurrentHashMap<>();
     private static PrintWriter generalLogWriter;
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-    
+
+    private static ExecutorService loggingExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "Debug-Logger-Thread");
+        thread.setDaemon(true);
+        thread.setPriority(GameConfig.Debug.LOGGING_THREAD_PRIORITY);
+        return thread;
+    });
+
+    private static BlockingQueue<LogTask> logQueue = new LinkedBlockingQueue<>();
+
     static {
         initializeLogging();
+        startLoggingThread();
+    }
+
+    private static void startLoggingThread() {
+        loggingExecutor.submit(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    LogTask task = logQueue.take();
+                    task.execute();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    System.err.println("Error in logging thread: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    private static class LogTask {
+        private final String category;
+        private final String message;
+        private final boolean isConsole;
+        private final boolean isError;
+        private final Throwable throwable;
+
+        LogTask(String category, String message, boolean isConsole, boolean isError, Throwable throwable) {
+            this.category = category;
+            this.message = message;
+            this.isConsole = isConsole;
+            this.isError = isError;
+            this.throwable = throwable;
+        }
+
+        void execute() {
+            if (isConsole) {
+                if (isError) {
+                    System.err.println(message);
+                } else {
+                    System.out.println(message);
+                }
+                if (throwable != null) {
+                    throwable.printStackTrace();
+                }
+            }
+            writeToFileSync(category, message, throwable);
+        }
     }
     
     private static void initializeLogging() {
@@ -53,6 +113,11 @@ public class Debug {
     
     public static void disableFileLogging() {
         fileLoggingEnabled = false;
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         closeAllWriters();
     }
     
@@ -63,106 +128,106 @@ public class Debug {
     public static void log(String message) {
         if (enabled) {
             String formattedMessage = "[DEBUG] " + message;
-            System.out.println(formattedMessage);
-            writeToFile("GENERAL", formattedMessage);
+            enqueueLog("GENERAL", formattedMessage, true, false, null);
         }
     }
-    
+
     public static void log(String message, Throwable throwable) {
         if (enabled) {
             String formattedMessage = "[DEBUG] " + message;
-            System.out.println(formattedMessage);
-            throwable.printStackTrace();
-            writeToFile("GENERAL", formattedMessage + " - Exception: " + throwable.getMessage());
+            enqueueLog("GENERAL", formattedMessage, true, false, throwable);
         }
     }
-    
+
     public static void logPlayer(String playerId, String message) {
         if (enabled) {
             String formattedMessage = "[PLAYER-" + playerId + "] " + message;
-            System.out.println(formattedMessage);
-            writeToFile(playerId, formattedMessage);
+            enqueueLog(playerId, formattedMessage, true, false, null);
         }
     }
-    
+
     public static void logServer(String message) {
         if (enabled) {
             String formattedMessage = "[SERVER] " + message;
-            System.out.println(formattedMessage);
-            writeToFile("SERVER", formattedMessage);
+            enqueueLog("SERVER", formattedMessage, true, false, null);
         }
     }
-    
+
     public static void logClient(String message) {
         if (enabled) {
             String formattedMessage = "[CLIENT] " + message;
-            System.out.println(formattedMessage);
-            writeToFile("CLIENT", formattedMessage);
+            enqueueLog("CLIENT", formattedMessage, true, false, null);
         }
     }
-    
+
     public static void logGameState(String message) {
         if (enabled) {
             String formattedMessage = "[GAME_STATE] " + message;
-            System.out.println(formattedMessage);
-            writeToFile("GAME_STATE", formattedMessage);
+            enqueueLog("GAME_STATE", formattedMessage, true, false, null);
         }
     }
-    
+
     public static void logNetwork(String message) {
         if (enabled) {
             String formattedMessage = "[NETWORK] " + message;
-            System.out.println(formattedMessage);
-            writeToFile("NETWORK", formattedMessage);
+            enqueueLog("NETWORK", formattedMessage, true, false, null);
         }
     }
-    
+
     public static void logTurn(String message) {
         if (enabled) {
             String formattedMessage = "[TURN] " + message;
-            System.out.println(formattedMessage);
-            writeToFile("TURN", formattedMessage);
+            enqueueLog("TURN", formattedMessage, true, false, null);
+        }
+    }
+
+    public static void error(String message) {
+        String formattedMessage = "[ERROR] " + message;
+        enqueueLog("ERROR", formattedMessage, true, true, null);
+    }
+
+    public static void error(String message, Throwable throwable) {
+        String formattedMessage = "[ERROR] " + message;
+        enqueueLog("ERROR", formattedMessage, true, true, throwable);
+    }
+
+    public static void errorPlayer(String playerId, String message) {
+        String formattedMessage = "[ERROR-PLAYER-" + playerId + "] " + message;
+        enqueueLog(playerId, formattedMessage, true, true, null);
+    }
+
+    public static void info(String message) {
+        String formattedMessage = "[INFO] " + message;
+        enqueueLog("GENERAL", formattedMessage, true, false, null);
+    }
+
+    public static void warning(String message) {
+        String formattedMessage = "[WARNING] " + message;
+        enqueueLog("GENERAL", formattedMessage, true, false, null);
+    }
+
+    private static void enqueueLog(String category, String message, boolean isConsole, boolean isError, Throwable throwable) {
+        try {
+            logQueue.offer(new LogTask(category, message, isConsole, isError, throwable));
+        } catch (Exception e) {
+            System.err.println("Failed to enqueue log: " + e.getMessage());
         }
     }
     
-    public static void error(String message) {
-        String formattedMessage = "[ERROR] " + message;
-        System.err.println(formattedMessage);
-        writeToFile("ERROR", formattedMessage);
-    }
-    
-    public static void error(String message, Throwable throwable) {
-        String formattedMessage = "[ERROR] " + message;
-        System.err.println(formattedMessage);
-        throwable.printStackTrace();
-        writeToFile("ERROR", formattedMessage + " - Exception: " + throwable.getMessage());
-    }
-    
-    public static void errorPlayer(String playerId, String message) {
-        String formattedMessage = "[ERROR-PLAYER-" + playerId + "] " + message;
-        System.err.println(formattedMessage);
-        writeToFile(playerId, formattedMessage);
-    }
-    
-    public static void info(String message) {
-        String formattedMessage = "[INFO] " + message;
-        System.out.println(formattedMessage);
-        writeToFile("GENERAL", formattedMessage);
-    }
-    
-    public static void warning(String message) {
-        String formattedMessage = "[WARNING] " + message;
-        System.out.println(formattedMessage);
-        writeToFile("GENERAL", formattedMessage);
-    }
-    
-    private static void writeToFile(String category, String message) {
+    private static void writeToFileSync(String category, String message, Throwable throwable) {
         if (!fileLoggingEnabled) return;
-        
+
         try {
             String timestamp = dateFormat.format(new Date());
             String logEntry = "[" + timestamp + "] " + message;
-            
+
+            if (throwable != null) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                throwable.printStackTrace(pw);
+                logEntry += "\n" + sw.toString();
+            }
+
             if ("GENERAL".equals(category)) {
                 if (generalLogWriter != null) {
                     generalLogWriter.println(logEntry);
@@ -210,6 +275,15 @@ public class Debug {
     }
     
     public static void cleanup() {
+        try {
+            loggingExecutor.shutdown();
+            if (!loggingExecutor.awaitTermination(GameConfig.Debug.SHUTDOWN_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)) {
+                loggingExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            loggingExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
         closeAllWriters();
     }
     

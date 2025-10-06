@@ -35,8 +35,8 @@ public class GameObject {
     }
 
     public void draw(Graphics2D g2) {
-        int drawW = hovered ? (int) (w * Config.HOVER_SCALE) : w;
-        int drawH = hovered ? (int) (h * Config.HOVER_SCALE) : h;
+        int drawW = hovered ? (int) (w * GameConfig.Display.HOVER_SCALE) : w;
+        int drawH = hovered ? (int) (h * GameConfig.Display.HOVER_SCALE) : h;
         int drawX = x - (drawW - w) / 2;
         int drawY = y - (drawH - h) / 2;
 

@@ -1,6 +1,6 @@
 package network;
 
-import core.Config;
+import core.GameConfig;
 import core.CoreDataManager;
 import core.Debug;
 import java.awt.*;
@@ -270,7 +270,7 @@ public class GameServer extends JFrame {
                                 Debug.logServer("🎯 Broadcasted game start turn: " + currentTurn);
                             }
                         } else {
-                            Debug.logServer("⏳ Waiting for more players to start game: " + coreDataManager.getPlayerCount() + "/" + Config.MIN_PLAYERS_TO_START);
+                            Debug.logServer("⏳ Waiting for more players to start game: " + coreDataManager.getPlayerCount() + "/" + GameConfig.Game.MIN_PLAYERS_TO_START);
                         }
                     } else {
                         log("Player " + msg.playerData.playerId + " already exists, updating character image");
@@ -387,13 +387,13 @@ public class GameServer extends JFrame {
         SwingUtilities.invokeLater(() -> {
             int playerCount = coreDataManager.getPlayerCount();
             playerCountLabel.setText("Players: " + playerCount);
-            
-            if (playerCount >= core.Config.MIN_PLAYERS_TO_START) {
-                waitingLabel.setText("Ready to start! (" + playerCount + "/" + core.Config.MIN_PLAYERS_TO_START + ")");
+
+            if (playerCount >= GameConfig.Game.MIN_PLAYERS_TO_START) {
+                waitingLabel.setText("Ready to start! (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")");
                 waitingLabel.setForeground(Color.GREEN);
                 gameStarted = true;
             } else {
-                waitingLabel.setText("Waiting for players... (" + playerCount + "/" + core.Config.MIN_PLAYERS_TO_START + ")");
+                waitingLabel.setText("Waiting for players... (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")");
                 waitingLabel.setForeground(Color.ORANGE);
                 gameStarted = false;
             }

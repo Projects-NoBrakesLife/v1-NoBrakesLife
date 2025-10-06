@@ -1,6 +1,6 @@
 package ui;
 
-import core.Config;
+import core.GameConfig;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -31,7 +31,7 @@ public class MapEditor extends JPanel {
 
     public MapEditor(String backgroundPath) {
         background = new ImageIcon(backgroundPath).getImage();
-        setPreferredSize(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
+        setPreferredSize(new Dimension(GameConfig.Display.GAME_WIDTH, GameConfig.Display.GAME_HEIGHT));
 
         MouseAdapter ma = new MouseAdapter() {
             @Override
@@ -109,8 +109,8 @@ public class MapEditor extends JPanel {
         o.img = img;
         o.w = img.getWidth();
         o.h = img.getHeight();
-        o.x = Config.GAME_WIDTH / 2 - o.w / 2;
-        o.y = Config.GAME_HEIGHT / 2 - o.h / 2;
+        o.x = GameConfig.Display.GAME_WIDTH / 2 - o.w / 2;
+        o.y = GameConfig.Display.GAME_HEIGHT / 2 - o.h / 2;
         objects.add(o);
         repaint();
     }
