@@ -17,6 +17,7 @@ import util.FontManager;
 import util.SoundPlayer;
 
 public class GamePanel extends JPanel {
+    private static final long serialVersionUID = 1L;
     private final Image background;
     private final Image uiBox;
     private java.util.List<GameObject> objects;
