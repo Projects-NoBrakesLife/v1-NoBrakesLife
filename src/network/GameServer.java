@@ -12,9 +12,11 @@ import javax.swing.*;
 
 public class GameServer extends JFrame {
     private static final int PORT = 12345;
+    private static final long CONNECTION_TIMEOUT = 15000; // 15 seconds
     private ServerSocket serverSocket;
     private final Map<Socket, String> clientConnections = new ConcurrentHashMap<>();
     private final Map<Socket, ObjectOutputStream> clientOutputs = new ConcurrentHashMap<>();
+    private final Map<String, Long> playerLastSeen = new ConcurrentHashMap<>();
     private JTextArea logArea;
     private JLabel playerCountLabel;
     private JButton startBtn;
@@ -25,7 +27,8 @@ public class GameServer extends JFrame {
     private JLabel waitingLabel;
     private boolean isRunning = false;
     private boolean gameStarted = false;
-    
+    private javax.swing.Timer cleanupTimer;
+
     private CoreDataManager coreDataManager;
     
     public GameServer() {
@@ -113,7 +116,10 @@ public class GameServer extends JFrame {
                     startBtn.setText("Server Running");
                     stopBtn.setEnabled(true);
                 });
-                
+
+                // Start cleanup timer
+                startCleanupTimer();
+
                 while (isRunning) {
                     Socket client = serverSocket.accept();
                     log("Client connected: " + client.getInetAddress());
@@ -129,6 +135,8 @@ public class GameServer extends JFrame {
     
     private void stopServer() {
         isRunning = false;
+        stopCleanupTimer();
+
         try {
             if (serverSocket != null) {
                 serverSocket.close();
@@ -137,11 +145,12 @@ public class GameServer extends JFrame {
                 client.close();
             }
             clientConnections.clear();
+            playerLastSeen.clear();
             coreDataManager.reset();
             log("Server stopped");
             updatePlayerCount();
             updatePlayerList();
-            
+
             SwingUtilities.invokeLater(() -> {
                 startBtn.setEnabled(true);
                 startBtn.setText("Start Server");
@@ -246,6 +255,7 @@ public class GameServer extends JFrame {
                             msg.playerData.characterImage
                         );
                         clientConnections.put(sender, msg.playerData.playerId);
+                        playerLastSeen.put(msg.playerData.playerId, System.currentTimeMillis());
                         String displayId = coreDataManager.getPlayerDisplayId(msg.playerData.playerId);
                         Debug.logServer("Player joined: " + msg.playerData.playerName + " (" + displayId + ") at " + msg.playerData.position);
                         Debug.logServer("Total players now: " + coreDataManager.getPlayerCount());
@@ -348,6 +358,12 @@ public class GameServer extends JFrame {
             case TURN_CHANGE:
                 log("Turn change message received (server initiated)");
                 break;
+
+            case HEARTBEAT:
+                // Update last seen timestamp
+                playerLastSeen.put(msg.playerData.playerId, System.currentTimeMillis());
+                // No need to broadcast heartbeat
+                break;
         }
     }
     
@@ -437,6 +453,66 @@ public class GameServer extends JFrame {
         }
     }
     
+    private void startCleanupTimer() {
+        if (cleanupTimer != null) {
+            cleanupTimer.stop();
+        }
+
+        cleanupTimer = new javax.swing.Timer(5000, e -> cleanupStaleConnections());
+        cleanupTimer.start();
+        log("Cleanup timer started");
+    }
+
+    private void stopCleanupTimer() {
+        if (cleanupTimer != null) {
+            cleanupTimer.stop();
+            cleanupTimer = null;
+            log("Cleanup timer stopped");
+        }
+    }
+
+    private void cleanupStaleConnections() {
+        long now = System.currentTimeMillis();
+        java.util.List<String> toRemove = new java.util.ArrayList<>();
+
+        for (Map.Entry<String, Long> entry : playerLastSeen.entrySet()) {
+            if (now - entry.getValue() > CONNECTION_TIMEOUT) {
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        for (String playerId : toRemove) {
+            PlayerData player = coreDataManager.getPlayer(playerId);
+            if (player != null) {
+                String displayId = coreDataManager.getPlayerDisplayId(playerId);
+                log("Removing stale connection: " + displayId + " (" + playerId + ")");
+
+                // Find and close the socket
+                for (Map.Entry<Socket, String> connEntry : clientConnections.entrySet()) {
+                    if (connEntry.getValue().equals(playerId)) {
+                        try {
+                            connEntry.getKey().close();
+                        } catch (IOException ex) {
+                            log("Error closing stale socket: " + ex.getMessage());
+                        }
+                        clientConnections.remove(connEntry.getKey());
+                        clientOutputs.remove(connEntry.getKey());
+                        break;
+                    }
+                }
+
+                coreDataManager.removePlayer(playerId);
+                playerLastSeen.remove(playerId);
+
+                NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, player);
+                broadcastMessage(leaveMsg, null);
+
+                updatePlayerCount();
+                updatePlayerList();
+            }
+        }
+    }
+
     private class PlayerListCellRenderer extends JLabel implements ListCellRenderer<String> {
         private ImageIcon male01Icon;
         private ImageIcon male02Icon;

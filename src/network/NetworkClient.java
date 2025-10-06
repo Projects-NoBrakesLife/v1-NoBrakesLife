@@ -7,22 +7,27 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.swing.Timer;
 
 public class NetworkClient {
     private static final String SERVER_IP = "localhost";
     private static final int PORT = 12345;
-    
+    private static final int HEARTBEAT_INTERVAL = 5000; // 5 seconds
+    private static final int RETRY_ATTEMPTS = 3;
+    private static final int RETRY_DELAY = 500; // 500ms
+
     private PlayerData myPlayerData;
     private Socket clientSocket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    
+
     private Map<String, PlayerData> onlinePlayers = new ConcurrentHashMap<>();
     private boolean isConnected = false;
     private java.util.function.Consumer<String> turnChangeCallback;
     private String currentTurnPlayer;
-    
+
     private CoreDataManager coreDataManager;
+    private Timer heartbeatTimer;
     
     public NetworkClient(String playerId, String playerName, Point startPosition, String characterImage) {
         this.myPlayerData = new PlayerData(playerId, playerName, startPosition, characterImage);
@@ -49,9 +54,12 @@ public class NetworkClient {
                     
                     isConnected = true;
                     System.out.println("Connected to server");
-                    
+
                     Thread.sleep(100);
                     sendMessage(NetworkMessage.createPlayerJoin(myPlayerData));
+
+                    // Start heartbeat after connection
+                    startHeartbeat();
                     
                     while (isConnected && !clientSocket.isClosed()) {
                         try {
@@ -100,101 +108,110 @@ public class NetworkClient {
             System.out.println("Received null message or playerData");
             return;
         }
-        
+
         switch (msg.type) {
             case PLAYER_JOIN:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    PlayerData newPlayer = msg.playerData.copy();
-                    onlinePlayers.put(msg.playerData.playerId, newPlayer);
-                    System.out.println("Player joined: " + msg.playerData.playerName + " (" + msg.playerData.playerId + ") at " + msg.playerData.position);
-                    System.out.println("Total online players: " + onlinePlayers.size());
+                    synchronized (onlinePlayers) {
+                        PlayerData newPlayer = msg.playerData.copy();
+                        onlinePlayers.put(msg.playerData.playerId, newPlayer);
+                        System.out.println("Player joined: " + msg.playerData.playerName + " (" + msg.playerData.playerId + ") at " + msg.playerData.position);
+                        System.out.println("Total online players: " + onlinePlayers.size());
+                    }
                 }
                 break;
-                
+
             case PLAYER_MOVE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
-                    if (player != null) {
-                        Point currentPos = player.position;
-                        Point newPos = msg.playerData.position;
-                        if (currentPos == null || !currentPos.equals(newPos)) {
-                            player.updatePosition(newPos);
-                            System.out.println("Received position update from server: " + msg.playerData.playerId + " to " + newPos);
+                    synchronized (onlinePlayers) {
+                        PlayerData player = onlinePlayers.get(msg.playerData.playerId);
+                        if (player != null) {
+                            Point currentPos = player.position;
+                            Point newPos = msg.playerData.position;
+                            if (currentPos == null || !currentPos.equals(newPos)) {
+                                player.updatePosition(newPos);
+                            }
                         }
                     }
                 }
                 break;
-                
+
             case PLAYER_UPDATE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
-                    if (player != null) {
-                        player.money = msg.playerData.money;
-                        player.health = msg.playerData.health;
-                        player.energy = msg.playerData.energy;
-                        player.remainingTime = msg.playerData.remainingTime;
-                        player.position = msg.playerData.position;
-                        player.currentLocation = msg.playerData.currentLocation;
-                        player.characterImage = msg.playerData.characterImage;
-                        System.out.println("Player updated: " + msg.playerData.playerId);
+                    synchronized (onlinePlayers) {
+                        PlayerData player = onlinePlayers.get(msg.playerData.playerId);
+                        if (player != null) {
+                            player.money = msg.playerData.money;
+                            player.health = msg.playerData.health;
+                            player.energy = msg.playerData.energy;
+                            player.remainingTime = msg.playerData.remainingTime;
+                            player.position = msg.playerData.position;
+                            player.currentLocation = msg.playerData.currentLocation;
+                            player.characterImage = msg.playerData.characterImage;
+                        }
                     }
                 }
                 break;
-                
+
             case PLAYER_STATS_UPDATE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
-                    if (player != null) {
-                        player.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
-                        System.out.println("Player stats updated: " + msg.playerData.playerId);
+                    synchronized (onlinePlayers) {
+                        PlayerData player = onlinePlayers.get(msg.playerData.playerId);
+                        if (player != null) {
+                            player.updateStats(msg.playerData.money, msg.playerData.health, msg.playerData.energy);
+                        }
                     }
                 }
                 break;
-                
+
             case PLAYER_LOCATION_CHANGE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
-                    if (player != null) {
-                        player.updateLocation(msg.playerData.currentLocation);
-                        System.out.println("Player location changed: " + msg.playerData.playerId + " to " + msg.playerData.currentLocation);
+                    synchronized (onlinePlayers) {
+                        PlayerData player = onlinePlayers.get(msg.playerData.playerId);
+                        if (player != null) {
+                            player.updateLocation(msg.playerData.currentLocation);
+                        }
                     }
                 }
                 break;
-                
+
             case PLAYER_TIME_UPDATE:
-                System.out.println("รับข้อความ PLAYER_TIME_UPDATE จาก: " + msg.playerData.playerId + " เวลา: " + msg.playerData.remainingTime + " ชั่วโมง");
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    PlayerData player = onlinePlayers.get(msg.playerData.playerId);
-                    if (player != null) {
-                        player.updateTime(msg.playerData.remainingTime);
-                        System.out.println("อัปเดตเวลาผู้เล่น: " + msg.playerData.playerId + " เป็น " + msg.playerData.remainingTime + " ชั่วโมง");
-                    } else {
-                        System.out.println("ไม่พบผู้เล่น: " + msg.playerData.playerId + " สำหรับอัปเดตเวลา");
+                    synchronized (onlinePlayers) {
+                        PlayerData player = onlinePlayers.get(msg.playerData.playerId);
+                        if (player != null) {
+                            player.updateTime(msg.playerData.remainingTime);
+                        }
                     }
-                } else {
-                    System.out.println("รับข้อมูลเวลาของตัวเอง: " + msg.playerData.remainingTime + " ชั่วโมง");
                 }
                 break;
-                
+
             case PLAYER_LEAVE:
                 if (!msg.playerData.playerId.equals(myPlayerData.playerId)) {
-                    onlinePlayers.remove(msg.playerData.playerId);
-                    System.out.println("Player left: " + msg.playerData.playerId);
+                    synchronized (onlinePlayers) {
+                        onlinePlayers.remove(msg.playerData.playerId);
+                        System.out.println("Player left: " + msg.playerData.playerId);
+                    }
                 }
                 break;
-                
+
             case TURN_COMPLETE:
                 System.out.println("Turn complete message received for: " + msg.playerData.playerId);
                 break;
-                
+
             case GAME_STATE_UPDATE:
                 System.out.println("Received game state update: " + msg.playerData.playerCount + " players, game started: " + msg.playerData.gameStarted);
                 break;
-                
+
             case TURN_CHANGE:
                 System.out.println("Turn changed to: " + msg.playerData.playerId);
                 currentTurnPlayer = msg.playerData.playerId;
                 onTurnChanged(msg.playerData.playerId);
+                break;
+
+            case HEARTBEAT:
+                // Heartbeat received - connection is alive
+                // No action needed on client side
                 break;
         }
     }
@@ -205,9 +222,6 @@ public class NetworkClient {
             myPlayerData.updatePosition(newPosition);
             if (isConnected) {
                 sendMessage(NetworkMessage.createPlayerMove(myPlayerData.playerId, newPosition));
-                if (System.currentTimeMillis() % 2000 < 100) {
-                    System.out.println("Sent position update: " + newPosition);
-                }
             }
         }
     }
@@ -230,9 +244,6 @@ public class NetworkClient {
         myPlayerData.updateTime(remainingTime);
         if (isConnected) {
             sendMessage(NetworkMessage.createPlayerTimeUpdate(myPlayerData.playerId, remainingTime));
-            if (System.currentTimeMillis() % 5000 < 100) {
-                System.out.println("ส่งข้อมูลเวลา: " + remainingTime + " ชั่วโมง สำหรับ " + myPlayerData.playerId);
-            }
         }
     }
     
@@ -294,9 +305,34 @@ public class NetworkClient {
         return isConnected;
     }
     
+    private void startHeartbeat() {
+        if (heartbeatTimer != null) {
+            heartbeatTimer.stop();
+        }
+
+        heartbeatTimer = new Timer(HEARTBEAT_INTERVAL, e -> {
+            if (isConnected) {
+                sendMessage(NetworkMessage.createHeartbeat(myPlayerData.playerId));
+            }
+        });
+        heartbeatTimer.start();
+    }
+
+    private void stopHeartbeat() {
+        if (heartbeatTimer != null) {
+            heartbeatTimer.stop();
+            heartbeatTimer = null;
+        }
+    }
+
     public void disconnect() {
         isConnected = false;
+        stopHeartbeat();
+
         try {
+            if (out != null) {
+                sendMessage(NetworkMessage.createPlayerLeave(myPlayerData.playerId));
+            }
             if (clientSocket != null) {
                 clientSocket.close();
             }
