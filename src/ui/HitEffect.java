@@ -8,6 +8,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class HitEffect extends JPanel {
+    private static final long serialVersionUID = 1L;
     private BufferedImage iconImage;
     private float y = 0;
     private float alpha = 1.0f;

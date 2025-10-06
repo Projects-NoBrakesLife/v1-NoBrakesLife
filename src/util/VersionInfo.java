@@ -52,21 +52,21 @@ public class VersionInfo {
 
     private static void loadVersionInfo() {
         try {
-            // Get commit hash
+
             Process commitProcess = Runtime.getRuntime().exec("git rev-parse --short HEAD");
             BufferedReader commitReader = new BufferedReader(new InputStreamReader(commitProcess.getInputStream()));
             cachedCommitHash = commitReader.readLine();
             commitReader.close();
             commitProcess.waitFor();
 
-            // Get branch name
+
             Process branchProcess = Runtime.getRuntime().exec("git rev-parse --abbrev-ref HEAD");
             BufferedReader branchReader = new BufferedReader(new InputStreamReader(branchProcess.getInputStream()));
             cachedBranch = branchReader.readLine();
             branchReader.close();
             branchProcess.waitFor();
 
-            // Get commit count as version number
+            
             Process countProcess = Runtime.getRuntime().exec("git rev-list --count HEAD");
             BufferedReader countReader = new BufferedReader(new InputStreamReader(countProcess.getInputStream()));
             String count = countReader.readLine();
@@ -78,7 +78,7 @@ public class VersionInfo {
             }
 
         } catch (Exception e) {
-            // If git is not available, use default values
+
             cachedVersion = "v1.0.0";
             cachedBranch = "unknown";
             cachedCommitHash = "unknown";

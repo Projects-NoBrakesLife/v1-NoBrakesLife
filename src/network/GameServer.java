@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.*;
 
 public class GameServer extends JFrame {
+    private static final long serialVersionUID = 1L;
     private static final int PORT = 12345;
     private static final long CONNECTION_TIMEOUT = 15000; // 15 seconds
     private ServerSocket serverSocket;

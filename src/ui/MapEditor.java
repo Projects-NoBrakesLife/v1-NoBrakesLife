@@ -12,6 +12,8 @@ import javax.swing.*;
 import util.BackgroundUtil;
 
 public class MapEditor extends JPanel {
+    private static final long serialVersionUID = 1L;
+
     static class Obj {
         String file;
         String name;
