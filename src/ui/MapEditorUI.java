@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.*;
 
 public class MapEditorUI extends JFrame {
+    private static final long serialVersionUID = 1L;
     private MapEditor mapEditor;
     private JTextArea outputArea;
 
