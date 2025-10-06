@@ -70,9 +70,11 @@ public class PlayerData implements Serializable {
         this.timestamp = System.currentTimeMillis();
     }
     
-    public void updateCharacter(String characterImage) {
-        this.characterImage = characterImage;
-        this.timestamp = System.currentTimeMillis();
+    public synchronized void updateCharacter(String characterImage) {
+        if (characterImage != null && !characterImage.isEmpty()) {
+            this.characterImage = characterImage;
+            this.timestamp = System.currentTimeMillis();
+        }
     }
     
     public PlayerData copy() {

@@ -17,7 +17,8 @@ public class NetworkMessage implements Serializable {
         PLAYER_TIME_UPDATE,
         TURN_COMPLETE,
         TURN_CHANGE,
-        GAME_STATE_UPDATE
+        GAME_STATE_UPDATE,
+        HEARTBEAT
     }
     
     public MessageType type;
@@ -78,5 +79,15 @@ public class NetworkMessage implements Serializable {
     public static NetworkMessage createTurnChange(String currentTurnPlayerId) {
         PlayerData data = new PlayerData(currentTurnPlayerId, "", new Point(), "");
         return new NetworkMessage(MessageType.TURN_CHANGE, data);
+    }
+
+    public static NetworkMessage createHeartbeat(String playerId) {
+        PlayerData data = new PlayerData(playerId, "", new Point(), "");
+        return new NetworkMessage(MessageType.HEARTBEAT, data);
+    }
+
+    public static NetworkMessage createPlayerLeave(String playerId) {
+        PlayerData data = new PlayerData(playerId, "", new Point(), "");
+        return new NetworkMessage(MessageType.PLAYER_LEAVE, data);
     }
 }
