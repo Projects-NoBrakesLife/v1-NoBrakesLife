@@ -127,19 +127,19 @@ public class CoreDataManager {
     
     public synchronized void startGame() {
         synchronized (dataLock) {
-            if (playerTurnOrder.size() >= Config.MIN_PLAYERS_TO_START) {
+            if (playerTurnOrder.size() >= GameConfig.Game.MIN_PLAYERS_TO_START) {
                 currentTurnPlayer = playerTurnOrder.get(0);
                 String currentDisplayId = playerIdToDisplayId.get(currentTurnPlayer);
                 Debug.logTurn("🎮 Game started! First turn player: " + currentDisplayId + " (" + currentTurnPlayer + ")");
             } else {
-                Debug.logTurn("❌ Cannot start game, not enough players: " + playerTurnOrder.size() + "/" + Config.MIN_PLAYERS_TO_START);
+                Debug.logTurn("❌ Cannot start game, not enough players: " + playerTurnOrder.size() + "/" + GameConfig.Game.MIN_PLAYERS_TO_START);
             }
         }
     }
     
     public synchronized boolean canStartGame() {
         synchronized (dataLock) {
-            return playerTurnOrder.size() >= Config.MIN_PLAYERS_TO_START;
+            return playerTurnOrder.size() >= GameConfig.Game.MIN_PLAYERS_TO_START;
         }
     }
     
@@ -236,7 +236,7 @@ public class CoreDataManager {
     
     public synchronized boolean isGameReady() {
         synchronized (dataLock) {
-            return allPlayers.size() >= Config.MIN_PLAYERS_TO_START;
+            return allPlayers.size() >= GameConfig.Game.MIN_PLAYERS_TO_START;
         }
     }
     

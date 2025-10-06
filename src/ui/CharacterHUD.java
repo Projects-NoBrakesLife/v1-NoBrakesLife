@@ -198,15 +198,7 @@ public class CharacterHUD {
             int tokenX = x - tokenSize/2;
             int tokenY = y + mainCircleRadius + 8;
             g2d.drawImage(currentTokenIcon, tokenX, tokenY, tokenSize, tokenSize, null);
-            
-          
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("Arial", Font.BOLD, 12));
-            FontMetrics fm = g2d.getFontMetrics();
-            String playerText = "P" + playerNumber;
-            int textX = tokenX + (tokenSize - fm.stringWidth(playerText)) / 2;
-            int textY = tokenY + tokenSize/2 + fm.getAscent()/2;
-            g2d.drawString(playerText, textX, textY);
+
         }
     }
     

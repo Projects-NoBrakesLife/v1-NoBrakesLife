@@ -49,7 +49,7 @@ public class GamePanel extends JPanel {
     public GamePanel() {
         background = new ImageIcon(Lang.BACKGROUND_IMAGE).getImage();
         uiBox = new ImageIcon(Lang.UI_BOX_IMAGE).getImage();
-        setPreferredSize(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
+        setPreferredSize(new Dimension(GameConfig.Display.GAME_WIDTH, GameConfig.Display.GAME_HEIGHT));
         setFocusable(true);
         requestFocusInWindow();
 
@@ -63,7 +63,7 @@ public class GamePanel extends JPanel {
         character = null;
         playerState = new PlayerState();
         characterHUD = new ui.CharacterHUD(playerState, 80, 100);
-        onlineHUDManager = new ui.OnlinePlayerHUDManager(new Dimension(Config.GAME_WIDTH, Config.GAME_HEIGHT));
+        onlineHUDManager = new ui.OnlinePlayerHUDManager(new Dimension(GameConfig.Display.GAME_WIDTH, GameConfig.Display.GAME_HEIGHT));
         networkClient = null;
 
         addKeyListener(new java.awt.event.KeyAdapter() {
@@ -152,39 +152,39 @@ public class GamePanel extends JPanel {
     }
 
     private void setupLocationPaths() {
-        locationPoints.put(PlayerState.Location.APARTMENT_SHITTY, Config.APARTMENT_POINT);
-        locationPoints.put(PlayerState.Location.BANK, Config.BANK_POINT);
-        locationPoints.put(PlayerState.Location.TECH, Config.TECH_POINT);
-        locationPoints.put(PlayerState.Location.JOB_OFFICE, Config.JOB_OFFICE_POINT);
-        locationPoints.put(PlayerState.Location.CULTURE, Config.CULTURE_POINT);
-        locationPoints.put(PlayerState.Location.UNIVERSITY, Config.UNIVERSITY_POINT);
+        locationPoints.put(PlayerState.Location.APARTMENT_SHITTY, GameConfig.Map.APARTMENT_POINT);
+        locationPoints.put(PlayerState.Location.BANK, GameConfig.Map.BANK_POINT);
+        locationPoints.put(PlayerState.Location.TECH, GameConfig.Map.TECH_POINT);
+        locationPoints.put(PlayerState.Location.JOB_OFFICE, GameConfig.Map.JOB_OFFICE_POINT);
+        locationPoints.put(PlayerState.Location.CULTURE, GameConfig.Map.CULTURE_POINT);
+        locationPoints.put(PlayerState.Location.UNIVERSITY, GameConfig.Map.UNIVERSITY_POINT);
 
-        roadPoints.addAll(Config.ROAD_POINTS);
+        roadPoints.addAll(GameConfig.Map.ROAD_POINTS);
     }
 
     public void selectCharacter() {
         String selectedImage = CharacterSelection.showCharacterSelection(parentFrame);
         if (selectedImage != null && !selectedImage.isEmpty()) {
-            character = new core.Character(Config.APARTMENT_POINT, selectedImage);
+            character = new core.Character(GameConfig.Map.APARTMENT_POINT, selectedImage);
             playerState.setCharacterImagePath(selectedImage);
-            
+
             if (characterHUD != null) {
                 characterHUD.loadCharacterIconNow();
             }
-            
+
             Debug.log("Character selected: " + selectedImage);
             Debug.log("Character created at: " + character.getPosition());
-            
+
             connectToServer(selectedImage);
         }
     }
-    
+
     private void connectToServer(String selectedImage) {
         String playerId = "player" + System.currentTimeMillis();
-        networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, selectedImage);
+        networkClient = new NetworkClient(playerId, Lang.DEFAULT_PLAYER_NAME, GameConfig.Map.APARTMENT_POINT, selectedImage);
         networkClient.setTurnChangeCallback(this::onTurnChanged);
-        
-        coreDataManager.addPlayer(playerId, Lang.DEFAULT_PLAYER_NAME, Config.APARTMENT_POINT, selectedImage);
+
+        coreDataManager.addPlayer(playerId, Lang.DEFAULT_PLAYER_NAME, GameConfig.Map.APARTMENT_POINT, selectedImage);
         Debug.logTurn("Added myself to CoreDataManager: " + playerId + " (" + Lang.DEFAULT_PLAYER_NAME + ")");
         
         networkClient.connect();
@@ -238,10 +238,10 @@ public class GamePanel extends JPanel {
         }
 
         if (hoveredObj != null) {
-            int boxW = (int) (uiBox.getWidth(null) * Config.UI_SCALE);
-            int boxH = (int) (uiBox.getHeight(null) * Config.UI_SCALE);
-            int cx = Config.GAME_WIDTH / 2 - boxW / 2;
-            int cy = Config.GAME_HEIGHT / Config.UI_OFFSET_Y - boxH / 2;
+            int boxW = (int) (uiBox.getWidth(null) * GameConfig.Display.UI_SCALE);
+            int boxH = (int) (uiBox.getHeight(null) * GameConfig.Display.UI_SCALE);
+            int cx = GameConfig.Display.GAME_WIDTH / 2 - boxW / 2;
+            int cy = GameConfig.Display.GAME_HEIGHT / GameConfig.Display.UI_OFFSET_Y - boxH / 2;
 
             g.drawImage(uiBox, cx, cy, boxW, boxH, null);
 
@@ -249,7 +249,7 @@ public class GamePanel extends JPanel {
             g.setFont(FontManager.getSmartThaiFont(20, Font.BOLD));
             FontMetrics fm = g.getFontMetrics();
             int textW = fm.stringWidth(hoveredObj.name);
-            int tx = Config.GAME_WIDTH / 2 - textW / 2;
+            int tx = GameConfig.Display.GAME_WIDTH / 2 - textW / 2;
             int ty = cy + (boxH / 2) + 30;
 
             g.drawString(hoveredObj.name, tx, ty);
@@ -278,17 +278,17 @@ public class GamePanel extends JPanel {
 
         if (waitingForPlayers) {
             g.setColor(new Color(0, 0, 0, 150));
-            g.fillRect(0, 0, Config.GAME_WIDTH, Config.GAME_HEIGHT);
-            
+            g.fillRect(0, 0, GameConfig.Display.GAME_WIDTH, GameConfig.Display.GAME_HEIGHT);
+
             g.setColor(Color.WHITE);
             g.setFont(FontManager.getSmartThaiFont(24, Font.BOLD));
             FontMetrics fm = g.getFontMetrics();
-            
+
             int totalPlayers = 1 + onlineCharacters.size();
-            String waitingText = "รอผู้เล่นอื่น... (" + totalPlayers + "/" + Config.MIN_PLAYERS_TO_START + ")";
+            String waitingText = "รอผู้เล่นอื่น... (" + totalPlayers + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")";
             int textWidth = fm.stringWidth(waitingText);
-            int textX = (Config.GAME_WIDTH - textWidth) / 2;
-            int textY = Config.GAME_HEIGHT / 2;
+            int textX = (GameConfig.Display.GAME_WIDTH - textWidth) / 2;
+            int textY = GameConfig.Display.GAME_HEIGHT / 2;
             g.drawString(waitingText, textX, textY);
         }
 
@@ -393,7 +393,7 @@ public class GamePanel extends JPanel {
 
         Debug.log(Lang.STARTING_MOVEMENT + path.size() + Lang.POINTS);
 
-        moveTimer = new javax.swing.Timer(Config.MOVEMENT_TIMER_INTERVAL, e -> {
+        moveTimer = new javax.swing.Timer(GameConfig.Game.MOVEMENT_TIMER_INTERVAL, e -> {
             if (currentPathIndex < currentPath.size()) {
                 Point targetPoint = currentPath.get(currentPathIndex);
                 Point currentPos = character.getPosition();
@@ -427,7 +427,7 @@ public class GamePanel extends JPanel {
         playerState.setCurrentLocation(targetLocation);
         
         if (playerState.hasTimeLeft()) {
-            playerState.useTime(Config.TIME_PER_MOVEMENT);
+            playerState.useTime(GameConfig.Game.TIME_PER_MOVEMENT);
             playerState.printStatus();
             showWindowForLocation(targetLocation);
             
@@ -537,7 +537,7 @@ public class GamePanel extends JPanel {
             }
             
             if (!onlineCharacters.containsKey(playerId)) {
-                Point playerPosition = player.position != null ? player.position : Config.APARTMENT_POINT;
+                Point playerPosition = player.position != null ? player.position : GameConfig.Map.APARTMENT_POINT;
                 String characterImage = player.characterImage != null ? player.characterImage : Lang.MALE_01;
                 
                 onlineCharacters.put(playerId, new core.Character(playerPosition, characterImage));
@@ -660,7 +660,7 @@ public class GamePanel extends JPanel {
         String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;
         if (myPlayerId != null && newTurnPlayerId.equals(myPlayerId)) {
             playerState.resetTime();
-            Debug.logTurn("✅ ตอนนี้เป็นเทิร์นของคุณแล้ว! เวลาถูกรีเซ็ตเป็น " + Config.TURN_TIME_HOURS + " ชั่วโมง");
+            Debug.logTurn("✅ ตอนนี้เป็นเทิร์นของคุณแล้ว! เวลาถูกรีเซ็ตเป็น " + GameConfig.Game.TURN_TIME_HOURS + " ชั่วโมง");
         } else {
             Debug.logTurn("⏳ รอเทิร์นของ: " + playerName + " - คุณไม่สามารถเดินได้");
         }
@@ -713,8 +713,8 @@ public class GamePanel extends JPanel {
         String currentTurnPlayer = coreDataManager.getCurrentTurnPlayer();
         if (currentTurnPlayer == null) {
             int playerCount = coreDataManager.getPlayerCount();
-            if (playerCount < Config.MIN_PLAYERS_TO_START) {
-                Debug.logTurn("drawTurnPopup: Waiting for more players (" + playerCount + "/" + Config.MIN_PLAYERS_TO_START + ")");
+            if (playerCount < GameConfig.Game.MIN_PLAYERS_TO_START) {
+                Debug.logTurn("drawTurnPopup: Waiting for more players (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")");
                 return;
             } else {
                 Debug.logTurn("drawTurnPopup: Game should start but currentTurnPlayer is null");
@@ -736,13 +736,13 @@ public class GamePanel extends JPanel {
         boolean isMyTurn = (myPlayerId != null) && currentTurnPlayer.equals(myPlayerId);
         
         int turnPlayerNumber = getPlayerNumber(currentTurnPlayer);
-        
-        int centerX = Config.GAME_WIDTH / 2;
-        int centerY = Config.GAME_HEIGHT / 2;
-        int tokenSize = 120; 
-        
+
+        int centerX = GameConfig.Display.GAME_WIDTH / 2;
+        int centerY = GameConfig.Display.GAME_HEIGHT / 2;
+        int tokenSize = 120;
+
         g2d.setColor(new Color(0, 0, 0, (int)(180 * alpha)));
-        g2d.fillRect(0, 0, Config.GAME_WIDTH, Config.GAME_HEIGHT);
+        g2d.fillRect(0, 0, GameConfig.Display.GAME_WIDTH, GameConfig.Display.GAME_HEIGHT);
         
         try {
             String tokenPath = "assets/ui/hud/Token P" + turnPlayerNumber + " Front.png";
@@ -808,10 +808,10 @@ public class GamePanel extends JPanel {
     
     private void checkPlayerCount() {
         int totalPlayers = coreDataManager.getPlayerCount();
-        boolean shouldWait = totalPlayers < Config.MIN_PLAYERS_TO_START;
-        boolean gameReady = totalPlayers >= Config.MIN_PLAYERS_TO_START;
-        
-        Debug.logTurn("checkPlayerCount: " + totalPlayers + "/" + Config.MIN_PLAYERS_TO_START + " players");
+        boolean shouldWait = totalPlayers < GameConfig.Game.MIN_PLAYERS_TO_START;
+        boolean gameReady = totalPlayers >= GameConfig.Game.MIN_PLAYERS_TO_START;
+
+        Debug.logTurn("checkPlayerCount: " + totalPlayers + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + " players");
         
         if (waitingForPlayers != shouldWait) {
             waitingForPlayers = shouldWait;
@@ -868,10 +868,10 @@ public class GamePanel extends JPanel {
         
         if (currentTurnPlayer == null) {
             int playerCount = coreDataManager.getPlayerCount();
-            if (playerCount < Config.MIN_PLAYERS_TO_START) {
-                Debug.logTurn("drawTimeDisplay: Waiting for more players (" + playerCount + "/" + Config.MIN_PLAYERS_TO_START + ")");
+            if (playerCount < GameConfig.Game.MIN_PLAYERS_TO_START) {
+                Debug.logTurn("drawTimeDisplay: Waiting for more players (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")");
                 currentPlayerTime = playerState.getRemainingTime();
-                currentPlayerName = "รอผู้เล่น (" + playerCount + "/" + Config.MIN_PLAYERS_TO_START + ")";
+                currentPlayerName = "รอผู้เล่น (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")";
             } else {
                 Debug.logTurn("drawTimeDisplay: Game should start but currentTurnPlayer is null");
                 currentPlayerTime = playerState.getRemainingTime();
@@ -897,14 +897,14 @@ public class GamePanel extends JPanel {
         String timeText = currentPlayerName + " - เวลาที่เหลือ: " + currentPlayerTime + " ชั่วโมง";
         
         g2d.setColor(new Color(0, 0, 0, 150));
-        g2d.fillRoundRect(Config.GAME_WIDTH/2 - 200, Config.GAME_HEIGHT - 60, 400, 40, 10, 10);
-        
+        g2d.fillRoundRect(GameConfig.Display.GAME_WIDTH/2 - 200, GameConfig.Display.GAME_HEIGHT - 60, 400, 40, 10, 10);
+
         g2d.setColor(Color.WHITE);
-        g2d.setFont(FontManager.getSmartThaiFont(Config.TIME_DISPLAY_FONT_SIZE, Font.BOLD));
+        g2d.setFont(FontManager.getSmartThaiFont(GameConfig.Game.TIME_DISPLAY_FONT_SIZE, Font.BOLD));
         FontMetrics fm = g2d.getFontMetrics();
         int textWidth = fm.stringWidth(timeText);
-        int textX = Config.GAME_WIDTH/2 - textWidth/2;
-        int textY = Config.GAME_HEIGHT - 30;
+        int textX = GameConfig.Display.GAME_WIDTH/2 - textWidth/2;
+        int textY = GameConfig.Display.GAME_HEIGHT - 30;
         
         g2d.drawString(timeText, textX, textY);
     }

@@ -26,10 +26,10 @@ public class PlayerState {
         this.currentPosition = new Point(878, 300);
         this.playerName = Lang.DEFAULT_PLAYER_NAME;
         this.characterImagePath = Lang.MALE_01;
-        this.money = Config.STARTING_MONEY;
-        this.health = Config.STARTING_HEALTH;
-        this.energy = Config.STARTING_ENERGY;
-        this.remainingTime = Config.TURN_TIME_HOURS;
+        this.money = GameConfig.Character.STARTING_MONEY;
+        this.health = GameConfig.Character.STARTING_HEALTH;
+        this.energy = GameConfig.Character.STARTING_ENERGY;
+        this.remainingTime = GameConfig.Game.TURN_TIME_HOURS;
     }
 
     public Location getCurrentLocation() {
@@ -127,8 +127,8 @@ public class PlayerState {
     }
 
     public void rest() {
-        addHealth(Config.REST_HEALTH_GAIN);
-        addEnergy(Config.REST_ENERGY_GAIN);
+        addHealth(GameConfig.Character.REST_HEALTH_GAIN);
+        addEnergy(GameConfig.Character.REST_ENERGY_GAIN);
         Debug.log(Lang.PLAYER_RESTED + health + Lang.ENERGY_STATUS + energy);
     }
 
@@ -155,8 +155,8 @@ public class PlayerState {
     }
 
     public void resetTime() {
-        this.remainingTime = Config.TURN_TIME_HOURS;
-        Debug.log("รีเซ็ตเวลาเป็น " + Config.TURN_TIME_HOURS + " ชั่วโมง");
+        this.remainingTime = GameConfig.Game.TURN_TIME_HOURS;
+        Debug.log("รีเซ็ตเวลาเป็น " + GameConfig.Game.TURN_TIME_HOURS + " ชั่วโมง");
     }
 
     public String getTimeString() {
