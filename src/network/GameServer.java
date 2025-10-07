@@ -116,7 +116,6 @@ public class GameServer extends JFrame {
                     stopBtn.setEnabled(true);
                 });
 
-                // Start cleanup timer
                 startCleanupTimer();
 
                 while (isRunning) {
@@ -359,9 +358,7 @@ public class GameServer extends JFrame {
                 break;
 
             case HEARTBEAT:
-                // Update last seen timestamp
                 playerLastSeen.put(msg.playerData.playerId, System.currentTimeMillis());
-                // No need to broadcast heartbeat
                 break;
         }
     }
@@ -486,7 +483,6 @@ public class GameServer extends JFrame {
                 String displayId = coreDataManager.getPlayerDisplayId(playerId);
                 log("Removing stale connection: " + displayId + " (" + playerId + ")");
 
-                // Find and close the socket
                 for (Map.Entry<Socket, String> connEntry : clientConnections.entrySet()) {
                     if (connEntry.getValue().equals(playerId)) {
                         try {

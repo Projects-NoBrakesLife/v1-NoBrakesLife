@@ -16,19 +16,14 @@ public class NetworkTest {
         NetworkTest test = new NetworkTest();
 
         try {
-            // Test 1: Server startup
             test.testServerStartup();
 
-            // Test 2: Multiple clients (3+ players)
             test.testMultipleClients();
 
-            // Test 3: Heartbeat mechanism
             test.testHeartbeat();
 
-            // Test 4: Connection cleanup
             test.testConnectionCleanup();
 
-            // Test 5: Turn management
             test.testTurnManagement();
 
             System.out.println("\n=== All Tests Completed ===");
@@ -84,7 +79,6 @@ public class NetworkTest {
         System.out.println(allConnected ? "✓ All clients connected successfully" : "✗ Some clients failed to connect");
         System.out.println();
 
-        // Keep clients for next tests
         this.client1 = client1;
         this.client2 = client2;
         this.client3 = client3;
@@ -164,7 +158,6 @@ public class NetworkTest {
         System.out.println("✓ Turn management is working\n");
     }
 
-    // Helper methods
     private NetworkClient client1, client2, client3, client4;
 
     private NetworkClient createTestClient(String name, String character) {
