@@ -28,18 +28,19 @@ public class CoreDataManager {
     private long lastBroadcastTime = 0;
     private boolean gameHasStarted = false;
     private java.util.function.Consumer<String> gameEndCallback;
-    
+
     public static CoreDataManager getInstance() {
         if (instance == null) {
             instance = new CoreDataManager();
         }
         return instance;
     }
-    
+
     private CoreDataManager() {
     }
-    
-    public synchronized PlayerData addPlayer(String playerId, String playerName, Point position, String characterImage) {
+
+    public synchronized PlayerData addPlayer(String playerId, String playerName, Point position,
+            String characterImage) {
         synchronized (dataLock) {
             if (allPlayers.containsKey(playerId)) {
                 PlayerData existing = allPlayers.get(playerId);
@@ -65,7 +66,7 @@ public class CoreDataManager {
             return newPlayer;
         }
     }
-    
+
     public synchronized void removePlayer(String playerId) {
         synchronized (dataLock) {
             PlayerData removed = allPlayers.remove(playerId);
@@ -83,7 +84,7 @@ public class CoreDataManager {
                     currentTurnPlayer = playerTurnOrder.get(0);
                 }
 
-                if (gameHasStarted && playerTurnOrder.size() < GameConfig.Game.MIN_PLAYERS_TO_CONTINUE) {
+                if (gameHasStarted && playerTurnOrder.size() <= GameConfig.Game.MIN_PLAYERS_TO_CONTINUE) {
                     endGame("Not enough players to continue");
                 }
 
@@ -91,7 +92,7 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized void updatePlayerPosition(String playerId, Point position) {
         synchronized (dataLock) {
             PlayerData player = allPlayers.get(playerId);
@@ -100,7 +101,7 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized void updatePlayerStats(String playerId, int money, int health, int energy) {
         synchronized (dataLock) {
             PlayerData player = allPlayers.get(playerId);
@@ -109,7 +110,7 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized void updatePlayerTime(String playerId, int remainingTime) {
         synchronized (dataLock) {
             PlayerData player = allPlayers.get(playerId);
@@ -118,7 +119,7 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized void updatePlayerLocation(String playerId, PlayerState.Location location) {
         synchronized (dataLock) {
             PlayerData player = allPlayers.get(playerId);
@@ -127,7 +128,7 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized void startGame() {
         synchronized (dataLock) {
             if (playerTurnOrder.size() >= GameConfig.Game.MIN_PLAYERS_TO_START) {
@@ -183,13 +184,13 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized boolean canStartGame() {
         synchronized (dataLock) {
             return playerTurnOrder.size() >= GameConfig.Game.MIN_PLAYERS_TO_START;
         }
     }
-    
+
     public synchronized void forceSetTurn(String playerId) {
         synchronized (dataLock) {
             if (playerTurnOrder.contains(playerId)) {
@@ -197,7 +198,7 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized void nextTurn() {
         synchronized (dataLock) {
             if (playerTurnOrder.isEmpty()) {
@@ -215,7 +216,7 @@ public class CoreDataManager {
             currentTurnPlayer = playerTurnOrder.get(nextIndex);
         }
     }
-    
+
     public synchronized void completeTurn(String playerId) {
         synchronized (dataLock) {
             if (currentTurnPlayer != null && currentTurnPlayer.equals(playerId)) {
@@ -240,43 +241,43 @@ public class CoreDataManager {
             }
         }
     }
-    
+
     public synchronized PlayerData getPlayer(String playerId) {
         synchronized (dataLock) {
             return allPlayers.get(playerId);
         }
     }
-    
+
     public synchronized Map<String, PlayerData> getAllPlayers() {
         synchronized (dataLock) {
             return new ConcurrentHashMap<>(allPlayers);
         }
     }
-    
+
     public synchronized String getCurrentTurnPlayer() {
         synchronized (dataLock) {
             return currentTurnPlayer;
         }
     }
-    
+
     public synchronized boolean isPlayerTurn(String playerId) {
         synchronized (dataLock) {
             return currentTurnPlayer != null && currentTurnPlayer.equals(playerId);
         }
     }
-    
+
     public synchronized String getPlayerDisplayId(String playerId) {
         synchronized (dataLock) {
             return playerIdToDisplayId.get(playerId);
         }
     }
-    
+
     public synchronized int getPlayerCount() {
         synchronized (dataLock) {
             return allPlayers.size();
         }
     }
-    
+
     public synchronized List<String> getPlayerTurnOrder() {
         synchronized (dataLock) {
             return new ArrayList<>(playerTurnOrder);
@@ -307,7 +308,7 @@ public class CoreDataManager {
     public synchronized boolean isGameReady() {
         synchronized (dataLock) {
             return currentPhase == GamePhase.GAME_RUNNING &&
-                   playerTurnOrder.size() >= GameConfig.Game.MIN_PLAYERS_TO_START;
+                    playerTurnOrder.size() >= GameConfig.Game.MIN_PLAYERS_TO_START;
         }
     }
 
