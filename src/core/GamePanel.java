@@ -48,6 +48,8 @@ public class GamePanel extends JPanel {
     private boolean waitingForPlayers = true;
     private javax.swing.Timer waitingTimer;
     private javax.swing.Timer timeCheckTimer;
+    private long gameEndTime = 0;
+    private String gameEndReason = "";
 
     public GamePanel() {
         background = new ImageIcon(Lang.BACKGROUND_IMAGE).getImage();
@@ -58,6 +60,7 @@ public class GamePanel extends JPanel {
 
         gameStateManager = GameStateManager.getInstance();
         coreDataManager = CoreDataManager.getInstance();
+        coreDataManager.setGameEndCallback(this::onGameEnded);
 
         objectFactory = GameObjectFactory.getInstance();
         objects = objectFactory.getAllObjects();
@@ -267,6 +270,7 @@ public class GamePanel extends JPanel {
         
         drawTurnPopup((Graphics2D) g);
         drawTimeDisplay((Graphics2D) g);
+        drawGameEndNotification((Graphics2D) g);
 
         if (waitingForPlayers) {
             g.setColor(new Color(0, 0, 0, 150));
@@ -886,14 +890,71 @@ public class GamePanel extends JPanel {
     
     private int getPlayerNumber(String playerId) {
         if (networkClient == null) return 1;
-        
+
         java.util.List<String> allPlayerIds = new java.util.ArrayList<>();
         String myPlayerId = networkClient.getMyPlayerData().playerId;
         allPlayerIds.add(myPlayerId);
         allPlayerIds.addAll(networkClient.getOnlinePlayers().keySet());
         java.util.Collections.sort(allPlayerIds);
-        
+
         int index = allPlayerIds.indexOf(playerId);
         return index >= 0 ? index + 1 : 1;
+    }
+
+    private void onGameEnded(String reason) {
+        gameEndTime = System.currentTimeMillis();
+        gameEndReason = reason;
+        Debug.log("🎮 Game has ended: " + reason);
+
+        if (moveTimer != null && moveTimer.isRunning()) {
+            moveTimer.stop();
+        }
+        if (waitingTimer != null && waitingTimer.isRunning()) {
+            waitingTimer.stop();
+        }
+        if (timeCheckTimer != null && timeCheckTimer.isRunning()) {
+            timeCheckTimer.stop();
+        }
+
+        isMoving = false;
+        repaint();
+    }
+
+    private void drawGameEndNotification(Graphics2D g2d) {
+        if (gameEndTime == 0) return;
+
+        long currentTime = System.currentTimeMillis();
+        long elapsedTime = currentTime - gameEndTime;
+
+        if (elapsedTime > GameConfig.Game.GAME_END_NOTIFICATION_DURATION) return;
+
+        float alpha = 1.0f - (float) elapsedTime / GameConfig.Game.GAME_END_NOTIFICATION_DURATION;
+        alpha = Math.max(0.0f, Math.min(1.0f, alpha));
+
+        int centerX = GameConfig.Display.GAME_WIDTH / 2;
+        int centerY = GameConfig.Display.GAME_HEIGHT / 2;
+
+        g2d.setColor(new Color(0, 0, 0, (int)(200 * alpha)));
+        g2d.fillRect(0, 0, GameConfig.Display.GAME_WIDTH, GameConfig.Display.GAME_HEIGHT);
+
+        g2d.setColor(new Color(255, 100, 100, (int)(255 * alpha)));
+        g2d.setFont(FontManager.getSmartThaiFont(36, Font.BOLD));
+        FontMetrics fm = g2d.getFontMetrics();
+
+        String endText = "เกมจบแล้ว!";
+        int textWidth = fm.stringWidth(endText);
+        g2d.drawString(endText, centerX - textWidth / 2, centerY - 40);
+
+        g2d.setColor(new Color(255, 255, 255, (int)(255 * alpha)));
+        g2d.setFont(FontManager.getSmartThaiFont(20, Font.PLAIN));
+        fm = g2d.getFontMetrics();
+
+        String reasonText = gameEndReason;
+        textWidth = fm.stringWidth(reasonText);
+        g2d.drawString(reasonText, centerX - textWidth / 2, centerY + 10);
+
+        String restartText = "กรุณารีสตาร์ทเซิร์ฟเวอร์";
+        textWidth = fm.stringWidth(restartText);
+        g2d.drawString(restartText, centerX - textWidth / 2, centerY + 40);
     }
 }

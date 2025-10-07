@@ -111,11 +111,14 @@ public class GameConfig {
 
     public static class Game {
         public static final int MIN_PLAYERS_TO_START = 3;
+        public static final int MIN_PLAYERS_TO_CONTINUE = 2;
         public static final int MOVEMENT_TIMER_INTERVAL = 8;
         public static final int TURN_TIME_HOURS = 24;
         public static final int TIME_PER_MOVEMENT = 10;
         public static final int TIME_DISPLAY_FONT_SIZE = 20;
-        public static final long TURN_POPUP_DURATION = 2000; // milliseconds
+        public static final long TURN_POPUP_DURATION = 2000;
+        public static final long GAME_END_NOTIFICATION_DURATION = 5000;
+        public static final long GAME_START_DELAY = 2000;
     }
 
     public static class Font {
