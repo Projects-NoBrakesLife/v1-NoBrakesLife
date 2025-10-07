@@ -101,6 +101,12 @@ public class GameConfig {
         public static final int POSITION_UPDATE_INTERVAL = 300;
         public static final int STATS_UPDATE_INTERVAL = 800;
         public static final int TIME_UPDATE_INTERVAL = 1500;
+        public static final int SERVER_PORT = 12345;
+        public static final int HEARTBEAT_INTERVAL = 5000; // 5 seconds
+        public static final int CONNECTION_TIMEOUT = 15000; // 15 seconds
+        public static final int RETRY_ATTEMPTS = 3;
+        public static final int RETRY_DELAY = 500; // 500ms
+        public static final long BROADCAST_INTERVAL = 100; // milliseconds
     }
 
     public static class Game {
@@ -109,6 +115,7 @@ public class GameConfig {
         public static final int TURN_TIME_HOURS = 24;
         public static final int TIME_PER_MOVEMENT = 10;
         public static final int TIME_DISPLAY_FONT_SIZE = 20;
+        public static final long TURN_POPUP_DURATION = 2000; // milliseconds
     }
 
     public static class Font {
@@ -132,6 +139,8 @@ public class GameConfig {
         public static final int HEIGHT_SHOP = 500;
         public static final int WIDTH_SMALL = 400;
         public static final int HEIGHT_SMALL = 300;
+        public static final int WIDTH_SERVER = 800;
+        public static final int HEIGHT_SERVER = 600;
     }
 
     public static class Button {
@@ -142,6 +151,10 @@ public class GameConfig {
 
     public static class Sound {
         public static final long MIN_PLAY_INTERVAL = 100;
+    }
+
+    public static class UI {
+        public static final long CLICK_COOLDOWN = 300; // milliseconds
     }
 
     public static class Debug {

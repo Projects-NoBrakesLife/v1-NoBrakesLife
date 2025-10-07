@@ -11,10 +11,6 @@ import javax.swing.Timer;
 
 public class NetworkClient {
     private static final String SERVER_IP = "localhost";
-    private static final int PORT = 12345;
-    private static final int HEARTBEAT_INTERVAL = 5000; // 5 seconds
-    private static final int RETRY_ATTEMPTS = 3;
-    private static final int RETRY_DELAY = 500; // 500ms
 
     private PlayerData myPlayerData;
     private Socket clientSocket;
@@ -43,11 +39,11 @@ public class NetworkClient {
     public void connect() {
         new Thread(() -> {
             int retryCount = 0;
-            int maxRetries = 3;
+            int maxRetries = GameConfig.Network.RETRY_ATTEMPTS;
             
             while (retryCount < maxRetries && !isConnected) {
                 try {
-                    clientSocket = new Socket(SERVER_IP, PORT);
+                    clientSocket = new Socket(SERVER_IP, GameConfig.Network.SERVER_PORT);
                     clientSocket.setSoTimeout(5000);
                     out = new ObjectOutputStream(clientSocket.getOutputStream());
                     in = new ObjectInputStream(clientSocket.getInputStream());
@@ -88,7 +84,7 @@ public class NetworkClient {
                     
                     if (retryCount < maxRetries) {
                         try {
-                            Thread.sleep(1000);
+                            Thread.sleep(GameConfig.Network.RETRY_DELAY);
                         } catch (InterruptedException ie) {
                             break;
                         }
@@ -310,7 +306,7 @@ public class NetworkClient {
             heartbeatTimer.stop();
         }
 
-        heartbeatTimer = new Timer(HEARTBEAT_INTERVAL, e -> {
+        heartbeatTimer = new Timer(GameConfig.Network.HEARTBEAT_INTERVAL, e -> {
             if (isConnected) {
                 sendMessage(NetworkMessage.createHeartbeat(myPlayerData.playerId));
             }

@@ -9,6 +9,7 @@ import javax.swing.*;
 
 public class HitEffect extends JPanel {
     private static final long serialVersionUID = 1L;
+    private static final long CLICK_COOLDOWN = 300;
     private BufferedImage iconImage;
     private float y = 0;
     private float alpha = 1.0f;
@@ -16,7 +17,6 @@ public class HitEffect extends JPanel {
     private boolean isActive = false;
     private static int activeCount = 0;
     private static long lastClickTime = 0;
-    private static final long CLICK_COOLDOWN = 300;
     
     public HitEffect(int x, int y) {
         long currentTime = System.currentTimeMillis();
