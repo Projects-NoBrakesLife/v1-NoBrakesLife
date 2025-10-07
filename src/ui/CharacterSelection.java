@@ -72,7 +72,6 @@ public class CharacterSelection {
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Add version info at bottom
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
 

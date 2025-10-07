@@ -26,6 +26,8 @@ public class CoreDataManager {
 
     private final Object dataLock = new Object();
     private long lastBroadcastTime = 0;
+    private boolean gameHasStarted = false;
+    private java.util.function.Consumer<String> gameEndCallback;
     
     public static CoreDataManager getInstance() {
         if (instance == null) {
@@ -81,6 +83,10 @@ public class CoreDataManager {
                     currentTurnPlayer = playerTurnOrder.get(0);
                 }
 
+                if (gameHasStarted && playerTurnOrder.size() < GameConfig.Game.MIN_PLAYERS_TO_CONTINUE) {
+                    endGame("Not enough players to continue");
+                }
+
                 updateGamePhase();
             }
         }
@@ -127,8 +133,24 @@ public class CoreDataManager {
             if (playerTurnOrder.size() >= GameConfig.Game.MIN_PLAYERS_TO_START) {
                 currentTurnPlayer = playerTurnOrder.get(0);
                 currentPhase = GamePhase.GAME_RUNNING;
+                gameHasStarted = true;
             }
         }
+    }
+
+    public synchronized void endGame(String reason) {
+        synchronized (dataLock) {
+            currentPhase = GamePhase.GAME_ENDED;
+            Debug.log("🎮 Game ended: " + reason);
+
+            if (gameEndCallback != null) {
+                gameEndCallback.accept(reason);
+            }
+        }
+    }
+
+    public synchronized void setGameEndCallback(java.util.function.Consumer<String> callback) {
+        this.gameEndCallback = callback;
     }
 
     private synchronized void updateGamePhase() {
@@ -148,7 +170,7 @@ public class CoreDataManager {
 
                 new Thread(() -> {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(GameConfig.Game.GAME_START_DELAY);
                         synchronized (dataLock) {
                             if (currentPhase == GamePhase.GAME_STARTING) {
                                 currentPhase = GamePhase.GAME_RUNNING;
@@ -297,6 +319,19 @@ public class CoreDataManager {
             currentTurnPlayer = null;
             nextPlayerNumber = 1;
             currentPhase = GamePhase.WAITING_FOR_PLAYERS;
+            gameHasStarted = false;
+        }
+    }
+
+    public synchronized boolean hasGameStarted() {
+        synchronized (dataLock) {
+            return gameHasStarted;
+        }
+    }
+
+    public synchronized boolean isGameEnded() {
+        synchronized (dataLock) {
+            return currentPhase == GamePhase.GAME_ENDED;
         }
     }
 }

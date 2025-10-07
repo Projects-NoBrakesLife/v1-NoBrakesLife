@@ -55,7 +55,6 @@ public class NetworkClient {
                     Thread.sleep(100);
                     sendMessage(NetworkMessage.createPlayerJoin(myPlayerData));
 
-                    // Start heartbeat after connection
                     startHeartbeat();
                     
                     while (isConnected && !clientSocket.isClosed()) {
@@ -207,8 +206,6 @@ public class NetworkClient {
                 break;
 
             case HEARTBEAT:
-                // Heartbeat received - connection is alive
-                // No action needed on client side
                 break;
         }
     }
