@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="78c868ab-c629-429f-9104-b7942563c78a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/TEST_INSTRUCTIONS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/CoreDataManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/CoreDataManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/GamePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/GamePanel.java" afterDir="false" />
-    </list>
+    <list default="true" id="78c868ab-c629-429f-9104-b7942563c78a" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -26,24 +22,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.Dev.executor&quot;: &quot;Run&quot;,
-    &quot;Application.GameServer.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
-    &quot;Application.MapEditorUI.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Play1.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Play2.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Play3.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Play4.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Server.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;v1/dev/network&amp;&amp;class&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/uSeR/Documents/GitHub/v1-NoBrakesLife/assets/ui/hud&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.Dev.executor": "Run",
+    "Application.GameServer.executor": "Run",
+    "Application.IntegratedGameTest.executor": "Run",
+    "Application.Main.executor": "Run",
+    "Application.MapEditorUI.executor": "Run",
+    "Application.Play1.executor": "Run",
+    "Application.Play2.executor": "Run",
+    "Application.Play3.executor": "Run",
+    "Application.Play4.executor": "Run",
+    "Application.Server.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/uSeR/Documents/GitHub/v1-NoBrakesLife/assets/ui/hud"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\uSeR\Documents\GitHub\v1-NoBrakesLife\assets\ui\hud" />
