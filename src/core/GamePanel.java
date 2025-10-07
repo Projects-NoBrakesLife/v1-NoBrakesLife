@@ -48,6 +48,7 @@ public class GamePanel extends JPanel {
     private boolean waitingForPlayers = true;
     private javax.swing.Timer waitingTimer;
     private javax.swing.Timer timeCheckTimer;
+    private javax.swing.Timer networkTimer;
     private long gameEndTime = 0;
     private String gameEndReason = "";
 
@@ -108,10 +109,6 @@ public class GamePanel extends JPanel {
                 }
 
                 repaint();
-                
-                if (networkClient != null) {
-                    networkClient.sendPlayerTimeUpdate(playerState.getRemainingTime());
-                }
             }
         });
 
@@ -184,34 +181,39 @@ public class GamePanel extends JPanel {
         
         networkClient.connect();
         
-        javax.swing.Timer connectionTimer = new javax.swing.Timer(100, e -> {
-            if (networkClient.isConnected()) {
-                gameStateManager.addPlayer(playerId, Lang.DEFAULT_PLAYER_NAME, selectedImage);
-                startNetworkTimers();
-                ((javax.swing.Timer) e.getSource()).stop();
+        new javax.swing.Timer(100, new java.awt.event.ActionListener() {
+            private int attempts = 0;
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (networkClient.isConnected()) {
+                    gameStateManager.addPlayer(playerId, Lang.DEFAULT_PLAYER_NAME, selectedImage);
+                    startNetworkTimers();
+                    ((javax.swing.Timer) e.getSource()).stop();
+                } else if (++attempts > 50) {
+                    ((javax.swing.Timer) e.getSource()).stop();
+                    Debug.log("Connection timeout");
+                }
             }
-        });
-        connectionTimer.start();
+        }).start();
     }
     
     private void startNetworkTimers() {
-        javax.swing.Timer initialUpdateTimer = new javax.swing.Timer(100, e -> {
+        new javax.swing.Timer(100, e -> {
             networkClient.sendPlayerUpdate();
             ((javax.swing.Timer) e.getSource()).stop();
-        });
-        initialUpdateTimer.start();
+        }).start();
 
-        javax.swing.Timer networkTimer = new javax.swing.Timer(100, _ -> {
+        networkTimer = new javax.swing.Timer(100, _ -> {
             updateOnlinePlayers();
             checkPlayerCount();
         });
         networkTimer.start();
-        
+
         waitingTimer = new javax.swing.Timer(500, _ -> {
             checkPlayerCount();
         });
         waitingTimer.start();
-        
+
         timeCheckTimer = new javax.swing.Timer(1000, _ -> {
             checkTimeExpired();
         });
@@ -388,14 +390,13 @@ public class GamePanel extends JPanel {
                 if (!targetPoint.equals(currentPos)) {
                     character.setPosition(targetPoint);
                     playerState.setCurrentPosition(targetPoint);
-                    
-                    if (networkClient != null) {
+
+                    if (networkClient != null && currentPathIndex % 5 == 0) {
                         networkClient.sendPlayerMove(targetPoint);
-                        networkClient.sendPlayerTimeUpdate(playerState.getRemainingTime());
                     }
                 }
-                
-                if (networkClient != null && currentPathIndex % 2 == 0) {
+
+                if (networkClient != null && currentPathIndex % 10 == 0) {
                     networkClient.sendPlayerLocationChange(playerState.getCurrentLocation());
                 }
                 
@@ -914,6 +915,9 @@ public class GamePanel extends JPanel {
         }
         if (timeCheckTimer != null && timeCheckTimer.isRunning()) {
             timeCheckTimer.stop();
+        }
+        if (networkTimer != null && networkTimer.isRunning()) {
+            networkTimer.stop();
         }
 
         isMoving = false;
