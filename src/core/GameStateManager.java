@@ -119,11 +119,11 @@ public class GameStateManager {
     private synchronized void updateGamePhase() {
         synchronized (stateLock) {
             int playerCount = connectedPlayers.size();
-            
-            if (playerCount < Config.MIN_PLAYERS_TO_START) {
+
+            if (playerCount < GameConfig.Game.MIN_PLAYERS_TO_START) {
                 if (currentPhase != GamePhase.WAITING_FOR_PLAYERS) {
                     currentPhase = GamePhase.WAITING_FOR_PLAYERS;
-                    Debug.log("Game phase changed to: WAITING_FOR_PLAYERS (" + playerCount + "/" + Config.MIN_PLAYERS_TO_START + ")");
+                    Debug.log("Game phase changed to: WAITING_FOR_PLAYERS (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")");
                 }
             } else if (currentPhase == GamePhase.WAITING_FOR_PLAYERS) {
                 currentPhase = GamePhase.GAME_STARTING;
@@ -152,8 +152,8 @@ public class GameStateManager {
     
     public synchronized boolean isGameReady() {
         synchronized (stateLock) {
-            return currentPhase == GamePhase.GAME_RUNNING && 
-                   connectedPlayers.size() >= Config.MIN_PLAYERS_TO_START;
+            return currentPhase == GamePhase.GAME_RUNNING &&
+                   connectedPlayers.size() >= GameConfig.Game.MIN_PLAYERS_TO_START;
         }
     }
     
@@ -218,11 +218,11 @@ public class GameStateManager {
             this.playerId = playerId;
             this.playerName = playerName;
             this.characterImage = characterImage;
-            this.money = Config.STARTING_MONEY;
-            this.health = Config.STARTING_HEALTH;
-            this.energy = Config.STARTING_ENERGY;
-            this.remainingTime = Config.TURN_TIME_HOURS;
-            this.position = Config.APARTMENT_POINT;
+            this.money = GameConfig.Character.STARTING_MONEY;
+            this.health = GameConfig.Character.STARTING_HEALTH;
+            this.energy = GameConfig.Character.STARTING_ENERGY;
+            this.remainingTime = GameConfig.Game.TURN_TIME_HOURS;
+            this.position = GameConfig.Map.APARTMENT_POINT;
             this.lastUpdateTime = System.currentTimeMillis();
         }
         

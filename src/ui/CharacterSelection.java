@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 import util.FontManager;
+import util.VersionInfo;
 
 public class CharacterSelection {
 
@@ -70,6 +71,17 @@ public class CharacterSelection {
         topPanel.add(subtitleLabel, BorderLayout.SOUTH);
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
+
+        String versionText = "Version: " + VersionInfo.getFullVersion();
+        JLabel versionLabel = new JLabel(versionText, JLabel.CENTER);
+        versionLabel.setFont(FontManager.getFontForText(versionText, 12));
+        versionLabel.setForeground(new Color(150, 150, 150));
+        bottomPanel.add(versionLabel, BorderLayout.CENTER);
+
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         JPanel characterPanel = new JPanel(new GridLayout(1, characterFiles.size(), 50, 50));
         characterPanel.setBorder(BorderFactory.createEmptyBorder(100, 100, 100, 100));

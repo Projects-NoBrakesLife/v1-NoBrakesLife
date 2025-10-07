@@ -1,6 +1,6 @@
 package util;
 
-import core.Config;
+import core.GameConfig;
 import core.Debug;
 import java.io.File;
 import java.io.IOException;
@@ -14,8 +14,8 @@ public class SoundPlayer {
 
     public void play(String filePath) {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastPlayTime < Config.SOUND_MIN_PLAY_INTERVAL) {
-            return; 
+        if (currentTime - lastPlayTime < GameConfig.Sound.MIN_PLAY_INTERVAL) {
+            return;
         }
         
         try {

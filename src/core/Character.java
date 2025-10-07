@@ -9,8 +9,8 @@ import javax.imageio.ImageIO;
 public class Character {
     private BufferedImage characterImage;
     private Point position;
-    private int width = Config.CHARACTER_WIDTH;
-    private int height = Config.CHARACTER_HEIGHT;
+    private int width = GameConfig.Character.WIDTH;
+    private int height = GameConfig.Character.HEIGHT;
     private String imagePath;
     
     public Character(Point startPosition) {

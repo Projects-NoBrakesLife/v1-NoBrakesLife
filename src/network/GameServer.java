@@ -1,6 +1,6 @@
 package network;
 
-import core.Config;
+import core.GameConfig;
 import core.CoreDataManager;
 import core.Debug;
 import java.awt.*;
@@ -11,10 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.*;
 
 public class GameServer extends JFrame {
-    private static final int PORT = 12345;
+    private static final long serialVersionUID = 1L;
     private ServerSocket serverSocket;
     private final Map<Socket, String> clientConnections = new ConcurrentHashMap<>();
     private final Map<Socket, ObjectOutputStream> clientOutputs = new ConcurrentHashMap<>();
+    private final Map<String, Long> playerLastSeen = new ConcurrentHashMap<>();
     private JTextArea logArea;
     private JLabel playerCountLabel;
     private JButton startBtn;
@@ -25,13 +26,14 @@ public class GameServer extends JFrame {
     private JLabel waitingLabel;
     private boolean isRunning = false;
     private boolean gameStarted = false;
-    
+    private javax.swing.Timer cleanupTimer;
+
     private CoreDataManager coreDataManager;
     
     public GameServer() {
         setTitle("Game Server - Debug");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
+        setSize(GameConfig.Window.WIDTH_SERVER, GameConfig.Window.HEIGHT_SERVER);
         setLocationRelativeTo(null);
         
         coreDataManager = CoreDataManager.getInstance();
@@ -104,16 +106,18 @@ public class GameServer extends JFrame {
         
         new Thread(() -> {
             try {
-                serverSocket = new ServerSocket(PORT);
+                serverSocket = new ServerSocket(GameConfig.Network.SERVER_PORT);
                 isRunning = true;
-                log("Server started on port " + PORT);
+                log("Server started on port " + GameConfig.Network.SERVER_PORT);
                 
                 SwingUtilities.invokeLater(() -> {
                     startBtn.setEnabled(false);
                     startBtn.setText("Server Running");
                     stopBtn.setEnabled(true);
                 });
-                
+
+                startCleanupTimer();
+
                 while (isRunning) {
                     Socket client = serverSocket.accept();
                     log("Client connected: " + client.getInetAddress());
@@ -129,6 +133,8 @@ public class GameServer extends JFrame {
     
     private void stopServer() {
         isRunning = false;
+        stopCleanupTimer();
+
         try {
             if (serverSocket != null) {
                 serverSocket.close();
@@ -137,11 +143,12 @@ public class GameServer extends JFrame {
                 client.close();
             }
             clientConnections.clear();
+            playerLastSeen.clear();
             coreDataManager.reset();
             log("Server stopped");
             updatePlayerCount();
             updatePlayerList();
-            
+
             SwingUtilities.invokeLater(() -> {
                 startBtn.setEnabled(true);
                 startBtn.setText("Start Server");
@@ -157,12 +164,12 @@ public class GameServer extends JFrame {
             ObjectOutputStream out = null;
             ObjectInputStream in = null;
             String clientId = client.getInetAddress().toString() + ":" + client.getPort();
-            
+
             try {
                 out = new ObjectOutputStream(client.getOutputStream());
                 in = new ObjectInputStream(client.getInputStream());
                 clientOutputs.put(client, out);
-                
+
                 log("Client connected: " + clientId);
                 Thread.sleep(100);
                 
@@ -246,6 +253,7 @@ public class GameServer extends JFrame {
                             msg.playerData.characterImage
                         );
                         clientConnections.put(sender, msg.playerData.playerId);
+                        playerLastSeen.put(msg.playerData.playerId, System.currentTimeMillis());
                         String displayId = coreDataManager.getPlayerDisplayId(msg.playerData.playerId);
                         Debug.logServer("Player joined: " + msg.playerData.playerName + " (" + displayId + ") at " + msg.playerData.position);
                         Debug.logServer("Total players now: " + coreDataManager.getPlayerCount());
@@ -270,7 +278,7 @@ public class GameServer extends JFrame {
                                 Debug.logServer("🎯 Broadcasted game start turn: " + currentTurn);
                             }
                         } else {
-                            Debug.logServer("⏳ Waiting for more players to start game: " + coreDataManager.getPlayerCount() + "/" + Config.MIN_PLAYERS_TO_START);
+                            Debug.logServer("⏳ Waiting for more players to start game: " + coreDataManager.getPlayerCount() + "/" + GameConfig.Game.MIN_PLAYERS_TO_START);
                         }
                     } else {
                         log("Player " + msg.playerData.playerId + " already exists, updating character image");
@@ -348,6 +356,10 @@ public class GameServer extends JFrame {
             case TURN_CHANGE:
                 log("Turn change message received (server initiated)");
                 break;
+
+            case HEARTBEAT:
+                playerLastSeen.put(msg.playerData.playerId, System.currentTimeMillis());
+                break;
         }
     }
     
@@ -387,13 +399,13 @@ public class GameServer extends JFrame {
         SwingUtilities.invokeLater(() -> {
             int playerCount = coreDataManager.getPlayerCount();
             playerCountLabel.setText("Players: " + playerCount);
-            
-            if (playerCount >= core.Config.MIN_PLAYERS_TO_START) {
-                waitingLabel.setText("Ready to start! (" + playerCount + "/" + core.Config.MIN_PLAYERS_TO_START + ")");
+
+            if (playerCount >= GameConfig.Game.MIN_PLAYERS_TO_START) {
+                waitingLabel.setText("Ready to start! (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")");
                 waitingLabel.setForeground(Color.GREEN);
                 gameStarted = true;
             } else {
-                waitingLabel.setText("Waiting for players... (" + playerCount + "/" + core.Config.MIN_PLAYERS_TO_START + ")");
+                waitingLabel.setText("Waiting for players... (" + playerCount + "/" + GameConfig.Game.MIN_PLAYERS_TO_START + ")");
                 waitingLabel.setForeground(Color.ORANGE);
                 gameStarted = false;
             }
@@ -437,6 +449,65 @@ public class GameServer extends JFrame {
         }
     }
     
+    private void startCleanupTimer() {
+        if (cleanupTimer != null) {
+            cleanupTimer.stop();
+        }
+
+        cleanupTimer = new javax.swing.Timer(5000, e -> cleanupStaleConnections());
+        cleanupTimer.start();
+        log("Cleanup timer started");
+    }
+
+    private void stopCleanupTimer() {
+        if (cleanupTimer != null) {
+            cleanupTimer.stop();
+            cleanupTimer = null;
+            log("Cleanup timer stopped");
+        }
+    }
+
+    private void cleanupStaleConnections() {
+        long now = System.currentTimeMillis();
+        java.util.List<String> toRemove = new java.util.ArrayList<>();
+
+        for (Map.Entry<String, Long> entry : playerLastSeen.entrySet()) {
+            if (now - entry.getValue() > GameConfig.Network.CONNECTION_TIMEOUT) {
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        for (String playerId : toRemove) {
+            PlayerData player = coreDataManager.getPlayer(playerId);
+            if (player != null) {
+                String displayId = coreDataManager.getPlayerDisplayId(playerId);
+                log("Removing stale connection: " + displayId + " (" + playerId + ")");
+
+                for (Map.Entry<Socket, String> connEntry : clientConnections.entrySet()) {
+                    if (connEntry.getValue().equals(playerId)) {
+                        try {
+                            connEntry.getKey().close();
+                        } catch (IOException ex) {
+                            log("Error closing stale socket: " + ex.getMessage());
+                        }
+                        clientConnections.remove(connEntry.getKey());
+                        clientOutputs.remove(connEntry.getKey());
+                        break;
+                    }
+                }
+
+                coreDataManager.removePlayer(playerId);
+                playerLastSeen.remove(playerId);
+
+                NetworkMessage leaveMsg = new NetworkMessage(NetworkMessage.MessageType.PLAYER_LEAVE, player);
+                broadcastMessage(leaveMsg, null);
+
+                updatePlayerCount();
+                updatePlayerList();
+            }
+        }
+    }
+
     private class PlayerListCellRenderer extends JLabel implements ListCellRenderer<String> {
         private ImageIcon male01Icon;
         private ImageIcon male02Icon;
