@@ -12,8 +12,6 @@ import javax.swing.*;
 
 public class GameServer extends JFrame {
     private static final long serialVersionUID = 1L;
-    private static final int PORT = 12345;
-    private static final long CONNECTION_TIMEOUT = 15000; // 15 seconds
     private ServerSocket serverSocket;
     private final Map<Socket, String> clientConnections = new ConcurrentHashMap<>();
     private final Map<Socket, ObjectOutputStream> clientOutputs = new ConcurrentHashMap<>();
@@ -35,7 +33,7 @@ public class GameServer extends JFrame {
     public GameServer() {
         setTitle("Game Server - Debug");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
+        setSize(GameConfig.Window.WIDTH_SERVER, GameConfig.Window.HEIGHT_SERVER);
         setLocationRelativeTo(null);
         
         coreDataManager = CoreDataManager.getInstance();
@@ -108,9 +106,9 @@ public class GameServer extends JFrame {
         
         new Thread(() -> {
             try {
-                serverSocket = new ServerSocket(PORT);
+                serverSocket = new ServerSocket(GameConfig.Network.SERVER_PORT);
                 isRunning = true;
-                log("Server started on port " + PORT);
+                log("Server started on port " + GameConfig.Network.SERVER_PORT);
                 
                 SwingUtilities.invokeLater(() -> {
                     startBtn.setEnabled(false);
@@ -477,7 +475,7 @@ public class GameServer extends JFrame {
         java.util.List<String> toRemove = new java.util.ArrayList<>();
 
         for (Map.Entry<String, Long> entry : playerLastSeen.entrySet()) {
-            if (now - entry.getValue() > CONNECTION_TIMEOUT) {
+            if (now - entry.getValue() > GameConfig.Network.CONNECTION_TIMEOUT) {
                 toRemove.add(entry.getKey());
             }
         }
