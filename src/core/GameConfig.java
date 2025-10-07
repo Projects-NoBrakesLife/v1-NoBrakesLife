@@ -102,11 +102,11 @@ public class GameConfig {
         public static final int STATS_UPDATE_INTERVAL = 800;
         public static final int TIME_UPDATE_INTERVAL = 1500;
         public static final int SERVER_PORT = 12345;
-        public static final int HEARTBEAT_INTERVAL = 5000; // 5 seconds
-        public static final int CONNECTION_TIMEOUT = 15000; // 15 seconds
+        public static final int HEARTBEAT_INTERVAL = 5000;
+        public static final int CONNECTION_TIMEOUT = 15000;
         public static final int RETRY_ATTEMPTS = 3;
-        public static final int RETRY_DELAY = 500; // 500ms
-        public static final long BROADCAST_INTERVAL = 100; // milliseconds
+        public static final int RETRY_DELAY = 500;
+        public static final long BROADCAST_INTERVAL = 100;
     }
 
     public static class Game {
