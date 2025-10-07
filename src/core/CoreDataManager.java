@@ -26,8 +26,6 @@ public class CoreDataManager {
 
     private final Object dataLock = new Object();
     private long lastBroadcastTime = 0;
-    private static final long BROADCAST_INTERVAL = 100;
-    private static final long CONNECTION_TIMEOUT = 15000;
     
     public static CoreDataManager getInstance() {
         if (instance == null) {
@@ -210,7 +208,7 @@ public class CoreDataManager {
             List<String> toRemove = new ArrayList<>();
 
             for (Map.Entry<String, PlayerData> entry : allPlayers.entrySet()) {
-                if (now - entry.getValue().timestamp > CONNECTION_TIMEOUT) {
+                if (now - entry.getValue().timestamp > GameConfig.Network.CONNECTION_TIMEOUT) {
                     toRemove.add(entry.getKey());
                 }
             }
@@ -265,7 +263,7 @@ public class CoreDataManager {
 
     public synchronized boolean shouldBroadcast() {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastBroadcastTime >= BROADCAST_INTERVAL) {
+        if (currentTime - lastBroadcastTime >= GameConfig.Network.BROADCAST_INTERVAL) {
             lastBroadcastTime = currentTime;
             return true;
         }

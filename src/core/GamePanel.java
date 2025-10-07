@@ -18,6 +18,7 @@ import util.SoundPlayer;
 
 public class GamePanel extends JPanel {
     private static final long serialVersionUID = 1L;
+
     private final Image background;
     private final Image uiBox;
     private java.util.List<GameObject> objects;
@@ -489,7 +490,6 @@ public class GamePanel extends JPanel {
     
     private boolean isTurnBasedMode = true;
     private long turnPopupStartTime = 0;
-    private static final long TURN_POPUP_DURATION = 2000; 
     
     private GameStateManager gameStateManager;
     private CoreDataManager coreDataManager;
@@ -727,10 +727,10 @@ public class GamePanel extends JPanel {
         
         long currentTime = System.currentTimeMillis();
         long elapsedTime = currentTime - turnPopupStartTime;
-     
-        if (elapsedTime > TURN_POPUP_DURATION) return;
-  
-        float alpha = 1.0f - (float) elapsedTime / TURN_POPUP_DURATION;
+
+        if (elapsedTime > GameConfig.Game.TURN_POPUP_DURATION) return;
+
+        float alpha = 1.0f - (float) elapsedTime / GameConfig.Game.TURN_POPUP_DURATION;
         alpha = Math.max(0.0f, Math.min(1.0f, alpha));
         
         String myPlayerId = (networkClient != null) ? networkClient.getMyPlayerData().playerId : null;

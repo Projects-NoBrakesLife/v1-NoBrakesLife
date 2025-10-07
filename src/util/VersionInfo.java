@@ -66,7 +66,7 @@ public class VersionInfo {
             branchReader.close();
             branchProcess.waitFor();
 
-            
+
             Process countProcess = Runtime.getRuntime().exec("git rev-list --count HEAD");
             BufferedReader countReader = new BufferedReader(new InputStreamReader(countProcess.getInputStream()));
             String count = countReader.readLine();
