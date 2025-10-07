@@ -6,12 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="78c868ab-c629-429f-9104-b7942563c78a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/GamePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/GamePanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/network/GameServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/network/GameServer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui/MapCanvas.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/MapCanvas.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui/MapEditor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/MapEditor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui/MapEditorUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/MapEditorUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/util/VersionInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/VersionInfo.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,7 +49,7 @@
       <recent name="C:\Users\uSeR\Documents\GitHub\v1-NoBrakesLife\assets\ui" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.Play3">
+  <component name="RunManager" selected="Application.Play4">
     <configuration name="Dev" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="ui.MapEditorUI" />
       <module name="v1-NoBrakesLife" />
