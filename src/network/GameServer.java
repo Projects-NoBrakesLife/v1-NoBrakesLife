@@ -164,12 +164,12 @@ public class GameServer extends JFrame {
             ObjectOutputStream out = null;
             ObjectInputStream in = null;
             String clientId = client.getInetAddress().toString() + ":" + client.getPort();
-            
+
             try {
                 out = new ObjectOutputStream(client.getOutputStream());
                 in = new ObjectInputStream(client.getInputStream());
                 clientOutputs.put(client, out);
-                
+
                 log("Client connected: " + clientId);
                 Thread.sleep(100);
                 

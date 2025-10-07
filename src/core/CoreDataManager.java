@@ -84,7 +84,7 @@ public class CoreDataManager {
                     currentTurnPlayer = playerTurnOrder.get(0);
                 }
 
-                if (gameHasStarted && playerTurnOrder.size() <= GameConfig.Game.MIN_PLAYERS_TO_CONTINUE) {
+                if (gameHasStarted && playerTurnOrder.size() < GameConfig.Game.MIN_PLAYERS_TO_CONTINUE) {
                     endGame("Not enough players to continue");
                 }
 
