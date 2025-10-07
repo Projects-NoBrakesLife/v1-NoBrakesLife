@@ -1,6 +1,7 @@
 package network;
 
 import core.CoreDataManager;
+import core.GameConfig;
 import core.PlayerState;
 import java.awt.Point;
 import java.io.*;

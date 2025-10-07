@@ -23,6 +23,7 @@ public class GamePanel extends JPanel {
     private final Image uiBox;
     private java.util.List<GameObject> objects;
     private GameObject hoveredObj = null;
+    private GameObjectFactory objectFactory;
     private final SoundPlayer soundPlayer = new SoundPlayer();
     private final WindowManager windowManager = new WindowManager();
     private boolean soundPlayed = false;
@@ -58,7 +59,8 @@ public class GamePanel extends JPanel {
         gameStateManager = GameStateManager.getInstance();
         coreDataManager = CoreDataManager.getInstance();
 
-        initializeObjects();
+        objectFactory = GameObjectFactory.getInstance();
+        objects = objectFactory.getAllObjects();
         setupLocationPaths();
         pathFinder = new PathFinder(roadPoints);
 
@@ -140,18 +142,6 @@ public class GamePanel extends JPanel {
         });
     }
 
-    private void initializeObjects() {
-        objects = java.util.List.of(
-                new GameObject("./assets/maps/obj/Apartment_Shitty-0.png", "./assets/maps/obj/Apartment_Shitty-1.png",
-                        Lang.APARTMENT_NAME,  727, 39, 152, 192, 0),
-                new GameObject("./assets/maps/obj/Bank-0.png", "./assets/maps/obj/Bank-1.png", Lang.BANK_NAME, 1131, 291, 181, 132, 90),
-                new GameObject("./assets/maps/obj/Tech-0.png", "./assets/maps/obj/Tech-1.png", Lang.TECH_NAME, 1259, 471, 143, 150, 0),
-                new GameObject("./assets/maps/obj/Job_Office-0.png","./assets/maps/obj/Job_Office-1.png", Lang.JOB_OFFICE_NAME, 911, 466, 208, 176, 0),
-                new GameObject("./assets/maps/obj/Culture-0.png","./assets/maps/obj/Culture-1.png", Lang.CULTURE_NAME, 711, 462, 186, 105, 0),
-                new GameObject("./assets/maps/obj/University-0.png", "./assets/maps/obj/University-1.png", Lang.UNIVERSITY_NAME, 462, 489, 168, 129, 0),
-              
-                new GameObject("./assets/ui/clock/Clock-Tower.png", Lang.CLOCK_TOWER_NAME,633, 615, 336, 352, 0));
-    }
 
     private void setupLocationPaths() {
         locationPoints.put(PlayerState.Location.APARTMENT_SHITTY, GameConfig.Map.APARTMENT_POINT);
@@ -310,24 +300,15 @@ public class GamePanel extends JPanel {
             Debug.log("❌ ไม่ใช่รอบของคุณ! รอรอบของ: " + currentPlayerName);
             return;
         }
-        
+
         if (!playerState.hasTimeLeft()) {
             Debug.log("⏰ เวลาหมดแล้ว! ไม่สามารถเดินได้");
             return;
         }
-        
-        if (obj.name.equals(Lang.APARTMENT_NAME)) {
-            moveToLocation(PlayerState.Location.APARTMENT_SHITTY, obj);
-        } else if (obj.name.equals(Lang.BANK_NAME)) {
-            moveToLocation(PlayerState.Location.BANK, obj);
-        } else if (obj.name.equals(Lang.TECH_NAME)) {
-            moveToLocation(PlayerState.Location.TECH, obj);
-        } else if (obj.name.equals(Lang.JOB_OFFICE_NAME)) {
-            moveToLocation(PlayerState.Location.JOB_OFFICE, obj);
-        } else if (obj.name.equals(Lang.CULTURE_NAME)) {
-            moveToLocation(PlayerState.Location.CULTURE, obj);
-        } else if (obj.name.equals(Lang.UNIVERSITY_NAME)) {
-            moveToLocation(PlayerState.Location.UNIVERSITY, obj);
+
+        PlayerState.Location location = objectFactory.getLocationForObject(obj);
+        if (location != null && objectFactory.isInteractable(obj)) {
+            moveToLocation(location, obj);
         }
     }
 
@@ -453,18 +434,11 @@ public class GamePanel extends JPanel {
     }
 
     private void showWindowForLocation(PlayerState.Location location) {
-        if (location == PlayerState.Location.APARTMENT_SHITTY) {
-            windowManager.showWindow(Lang.APARTMENT_WINDOW, Lang.APARTMENT_TITLE);
-        } else if (location == PlayerState.Location.BANK) {
-            windowManager.showWindow(Lang.BANK_WINDOW, Lang.BANK_TITLE);
-        } else if (location == PlayerState.Location.TECH) {
-            windowManager.showWindow(Lang.TECH_WINDOW, Lang.TECH_TITLE);
-        } else if (location == PlayerState.Location.JOB_OFFICE) {
-            windowManager.showWindow(Lang.JOB_WINDOW, Lang.JOB_TITLE);
-        } else if (location == PlayerState.Location.CULTURE) {
-            windowManager.showWindow(Lang.CULTURE_WINDOW, Lang.CULTURE_TITLE);
-        } else if (location == PlayerState.Location.UNIVERSITY) {
-            windowManager.showWindow(Lang.UNIVERSITY_WINDOW, Lang.UNIVERSITY_TITLE);
+        String windowId = objectFactory.getWindowIdForLocation(location);
+        GameObjectType type = objectFactory.getTypeByLocation(location);
+
+        if (windowId != null && type != null) {
+            windowManager.showWindow(windowId, type.getDisplayName());
         }
     }
 
