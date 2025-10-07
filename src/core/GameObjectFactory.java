@@ -5,10 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Factory class for creating and managing game objects
- * Provides easy access to objects and their properties
- */
 public class GameObjectFactory {
     private static GameObjectFactory instance;
     private final Map<GameObjectType, GameObject> objectMap;
@@ -35,25 +31,23 @@ public class GameObjectFactory {
 
             if (type.hasHoverImage()) {
                 obj = new GameObject(
-                    type.getNormalImagePath(),
-                    type.getHoverImagePath(),
-                    type.getDisplayName(),
-                    type.getX(),
-                    type.getY(),
-                    type.getWidth(),
-                    type.getHeight(),
-                    type.getRotation()
-                );
+                        type.getNormalImagePath(),
+                        type.getHoverImagePath(),
+                        type.getDisplayName(),
+                        type.getX(),
+                        type.getY(),
+                        type.getWidth(),
+                        type.getHeight(),
+                        type.getRotation());
             } else {
                 obj = new GameObject(
-                    type.getNormalImagePath(),
-                    type.getDisplayName(),
-                    type.getX(),
-                    type.getY(),
-                    type.getWidth(),
-                    type.getHeight(),
-                    type.getRotation()
-                );
+                        type.getNormalImagePath(),
+                        type.getDisplayName(),
+                        type.getX(),
+                        type.getY(),
+                        type.getWidth(),
+                        type.getHeight(),
+                        type.getRotation());
             }
 
             objectMap.put(type, obj);
@@ -65,38 +59,23 @@ public class GameObjectFactory {
         }
     }
 
-    /**
-     * Get all game objects as a list
-     */
     public List<GameObject> getAllObjects() {
         return new ArrayList<>(allObjects);
     }
 
-    /**
-     * Get a specific game object by type
-     */
     public GameObject getObject(GameObjectType type) {
         return objectMap.get(type);
     }
 
-    /**
-     * Get game object type by location
-     */
     public GameObjectType getTypeByLocation(PlayerState.Location location) {
         return locationToTypeMap.get(location);
     }
 
-    /**
-     * Get window ID for a location
-     */
     public String getWindowIdForLocation(PlayerState.Location location) {
         GameObjectType type = locationToTypeMap.get(location);
         return type != null ? type.getWindowId() : null;
     }
 
-    /**
-     * Check if an object is interactable
-     */
     public boolean isInteractable(GameObject obj) {
         for (Map.Entry<GameObjectType, GameObject> entry : objectMap.entrySet()) {
             if (entry.getValue().equals(obj)) {
@@ -106,9 +85,6 @@ public class GameObjectFactory {
         return false;
     }
 
-    /**
-     * Get location for a game object
-     */
     public PlayerState.Location getLocationForObject(GameObject obj) {
         for (Map.Entry<GameObjectType, GameObject> entry : objectMap.entrySet()) {
             if (entry.getValue().equals(obj)) {
@@ -118,9 +94,6 @@ public class GameObjectFactory {
         return null;
     }
 
-    /**
-     * Get all interactable objects
-     */
     public List<GameObject> getInteractableObjects() {
         List<GameObject> interactable = new ArrayList<>();
         for (GameObjectType type : GameObjectType.values()) {
@@ -131,9 +104,6 @@ public class GameObjectFactory {
         return interactable;
     }
 
-    /**
-     * Reset the factory (useful for testing or reloading)
-     */
     public void reset() {
         objectMap.clear();
         locationToTypeMap.clear();
